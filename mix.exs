@@ -37,7 +37,7 @@ defmodule ScenicDriverMac.MixProject do
 
       { :elixir_make, "~> 0.4" },
 
-      { :scenic, git: "git@github.com:boydm/scenic.git", branch: "nvg" },
+      { :scenic, git: "git@github.com:boydm/scenic.git" },
       # { :scenic_math, git: "git@github.com:boydm/scenic_math.git" },
       # { :scenic_truetype, git: "git@github.com:boydm/scenic_truetype.git" },
     ]
