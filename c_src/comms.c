@@ -246,62 +246,67 @@ bool read_bytes_down( void* p_buff, int bytes_to_read, int* p_bytes_to_remaining
 
 //---------------------------------------------------------
 void send_puts( const char* msg ) {
-  int len = strlen(msg);
-  byte* p_data = malloc(len + 1);
+  uint32_t msg_len = strlen(msg);
+  uint32_t cmd_len = msg_len + 1;
+  byte cmd = MSG_OUT_PUTS;
 
-  p_data[0] = MSG_OUT_PUTS;
-  memcpy(&p_data[1], msg, len);
-  write_cmd( p_data, len + 1 );
+  if (f_little_endian) cmd_len = SWAP_UINT32(cmd_len);
 
-  free( p_data );
+  write_exact((byte*)&cmd_len, sizeof(uint32_t));
+  write_exact(&cmd, sizeof(byte));
+  write_exact((byte*)msg, msg_len);
 }
 
 //---------------------------------------------------------
 void send_write( const char* msg ) {
-  int len = strlen(msg);
-  byte* p_data = malloc(len + 1);
+  uint32_t msg_len = strlen(msg);
+  uint32_t cmd_len = msg_len + 1;
+  byte cmd = MSG_OUT_WRITE;
 
-  p_data[0] = MSG_OUT_WRITE;
-  memcpy(&p_data[1], msg, len);
-  write_cmd( p_data, len + 1 );
+  if (f_little_endian) cmd_len = SWAP_UINT32(cmd_len);
 
-  free( p_data );
+  write_exact((byte*)&cmd_len, sizeof(uint32_t));
+  write_exact(&cmd, sizeof(byte));
+  write_exact((byte*)msg, msg_len);
 }
 
 //---------------------------------------------------------
 void send_inspect( void* data, int length ) {
-  byte* p_data = malloc(length + 1);
+  uint32_t cmd_len = length + 1;
+  byte cmd = MSG_OUT_INSPECT;
 
-  p_data[0] = MSG_OUT_INSPECT;
-  memcpy(&p_data[1], data, length);
-  write_cmd( p_data, length + 1 );
+  if (f_little_endian) cmd_len = SWAP_UINT32(cmd_len);
 
-  free( p_data );
+  write_exact((byte*)&cmd_len, sizeof(uint32_t));
+  write_exact(&cmd, sizeof(byte));
+  write_exact(data, length);
 }
 
 
 //---------------------------------------------------------
 void send_cache_miss( const char* key ) {
-  int len = strlen(key);
-  byte* p_data = malloc(len + 1);
+  uint32_t msg_len = strlen(key);
+  uint32_t cmd_len = msg_len + 1;
+  byte cmd = MSG_OUT_CACHE_MISS;
 
-  p_data[0] = MSG_OUT_CACHE_MISS;
-  memcpy(&p_data[1], key, len);
-  write_cmd( p_data, len + 1 );
+  if (f_little_endian) cmd_len = SWAP_UINT32(cmd_len);
 
-  free( p_data );
+  write_exact((byte*)&cmd_len, sizeof(uint32_t));
+  write_exact(&cmd, sizeof(byte));
+  write_exact((byte*)key, msg_len);
 }
 
 //---------------------------------------------------------
 void send_font_miss( const char* key ) {
-  int len = strlen(key);
-  byte* p_data = malloc(len + 1);
+  uint32_t msg_len = strlen(key);
+  uint32_t cmd_len = msg_len + 1;
+  byte cmd = MSG_OUT_FONT_MISS;
 
-  p_data[0] = MSG_OUT_FONT_MISS;
-  memcpy(&p_data[1], key, len);
-  write_cmd( p_data, len + 1 );
+  if (f_little_endian) cmd_len = SWAP_UINT32(cmd_len);
 
-  free( p_data );
+  write_exact((byte*)&cmd_len, sizeof(uint32_t));
+  write_exact(&cmd, sizeof(byte));
+  write_exact((byte*)key, msg_len);
 }
 
 //---------------------------------------------------------
