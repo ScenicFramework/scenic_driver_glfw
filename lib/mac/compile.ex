@@ -13,6 +13,7 @@ defmodule Scenic.Driver.Mac.Compile do
 
   require Logger
 
+  # import IEx
 
   #============================================================================
   # state handling
@@ -264,7 +265,7 @@ defmodule Scenic.Driver.Mac.Compile do
       id ->
         [
           <<
-            @op_run_script :: size(8),
+            @op_run_script :: unsigned-integer-size(32)-native,
             id :: unsigned-integer-size(32)-native
           >>
           | ops
@@ -320,7 +321,7 @@ defmodule Scenic.Driver.Mac.Compile do
   defp do_compile_style(ops, :scissor, {{x,y}, w, h}) do
     [
       <<
-        @op_intersect_scissor :: size(8),
+        @op_intersect_scissor :: unsigned-integer-size(32)-native,
         x :: float-size(32)-native,
         y :: float-size(32)-native,
         w :: float-size(32)-native,
@@ -401,7 +402,7 @@ defmodule Scenic.Driver.Mac.Compile do
   defp do_compile_tx(ops, :translate, {dx,dy}) do
     [
       <<
-        @op_tx_translate :: size(8),
+        @op_tx_translate :: unsigned-integer-size(32)-native,
         dx :: float-size(32)-native,
         dy :: float-size(32)-native
       >>
@@ -411,7 +412,7 @@ defmodule Scenic.Driver.Mac.Compile do
   defp do_compile_tx(ops, :pin, {dx,dy}) do
     [
       <<
-        @op_tx_translate :: size(8),
+        @op_tx_translate :: unsigned-integer-size(32)-native,
         dx :: float-size(32)-native,
         dy :: float-size(32)-native
       >>
@@ -422,7 +423,7 @@ defmodule Scenic.Driver.Mac.Compile do
     {dx,dy} = Scenic.Math.Vector.invert( {dx,dy} )
     [
       <<
-        @op_tx_translate :: size(8),
+        @op_tx_translate :: unsigned-integer-size(32)-native,
         dx :: float-size(32)-native,
         dy :: float-size(32)-native
       >>
@@ -432,7 +433,7 @@ defmodule Scenic.Driver.Mac.Compile do
   defp do_compile_tx(ops, :scale, {sx,sy}) do
     [
       <<
-        @op_tx_scale :: size(8),
+        @op_tx_scale :: unsigned-integer-size(32)-native,
         sx :: float-size(32)-native,
         sy :: float-size(32)-native
       >>
@@ -442,7 +443,7 @@ defmodule Scenic.Driver.Mac.Compile do
   defp do_compile_tx(ops, :rotate, value) when is_number(value) do
     [
       <<
-        @op_tx_rotate :: size(8),
+        @op_tx_rotate :: unsigned-integer-size(32)-native,
         value :: float-size(32)-native,
       >>
     | ops]
@@ -451,7 +452,7 @@ defmodule Scenic.Driver.Mac.Compile do
   defp do_compile_tx(ops, :skew_x, value) when is_number(value) do
     [
       <<
-        @op_tx_skew_x :: size(8),
+        @op_tx_skew_x :: unsigned-integer-size(32)-native,
         value :: float-size(32)-native,
       >>
     | ops]
@@ -460,7 +461,7 @@ defmodule Scenic.Driver.Mac.Compile do
   defp do_compile_tx(ops, :skew_y, value) when is_number(value) do
     [
       <<
-        @op_tx_skew_y :: size(8),
+        @op_tx_skew_y :: unsigned-integer-size(32)-native,
         value :: float-size(32)-native,
       >>
     | ops]
@@ -477,7 +478,7 @@ defmodule Scenic.Driver.Mac.Compile do
     >>) do
     [
       <<
-        @op_tx_matrix :: size(8),
+        @op_tx_matrix :: unsigned-integer-size(32)-native,
         a :: float-size(32)-native,
         b :: float-size(32)-native,
         c :: float-size(32)-native,
@@ -496,8 +497,8 @@ defmodule Scenic.Driver.Mac.Compile do
   # each new command is added to the front of the list, which will be reversed at the end.
  
   #--------------------------------------------------------
-  defp op_push_state(ops),    do: [ <<@op_push_state :: size(8) >> | ops ]
-  defp op_pop_state(ops),     do: [ <<@op_pop_state :: size(8) >> | ops ]
+  defp op_push_state(ops),    do: [ <<@op_push_state :: unsigned-integer-size(32)-native >> | ops ]
+  defp op_pop_state(ops),     do: [ <<@op_pop_state :: unsigned-integer-size(32)-native >> | ops ]
   # defp op_reset_state(ops),   do: [ <<@op_reset_state :: size(8) >> | ops ]
 
   # #--------------------------------------------------------
@@ -514,13 +515,21 @@ defmodule Scenic.Driver.Mac.Compile do
   defp op_paint_linear(ops, sx, sy, ex, ey, {sr, sg, sb, sa}, {er, eg, eb, ea}) do
     [
       <<
-        @op_paint_linear :: size(8),
+        @op_paint_linear :: unsigned-integer-size(32)-native,
         sx :: float-size(32)-native,
         sy :: float-size(32)-native,
         ex :: float-size(32)-native,
         ey :: float-size(32)-native,
-        sr :: size(8), sg :: size(8), sb :: size(8), sa :: size(8),
-        er :: size(8), eg :: size(8), eb :: size(8), ea :: size(8)
+        
+        sr :: unsigned-integer-size(32)-native,
+        sg :: unsigned-integer-size(32)-native,
+        sb :: unsigned-integer-size(32)-native,
+        sa :: unsigned-integer-size(32)-native,
+
+        er :: unsigned-integer-size(32)-native,
+        eg :: unsigned-integer-size(32)-native,
+        eb :: unsigned-integer-size(32)-native,
+        ea :: unsigned-integer-size(32)-native
       >>
     | ops]
   end
@@ -529,15 +538,23 @@ defmodule Scenic.Driver.Mac.Compile do
   {sr, sg, sb, sa}, {er, eg, eb, ea}) do
     [
       <<
-        @op_paint_box :: size(8),
+        @op_paint_box :: unsigned-integer-size(32)-native,
         x :: float-size(32)-native,
         y :: float-size(32)-native,
         w :: float-size(32)-native,
         h :: float-size(32)-native,
         radius :: float-size(32)-native,
         feather :: float-size(32)-native,
-        sr :: size(8), sg :: size(8), sb :: size(8), sa :: size(8),
-        er :: size(8), eg :: size(8), eb :: size(8), ea :: size(8)
+
+        sr :: unsigned-integer-size(32)-native,
+        sg :: unsigned-integer-size(32)-native,
+        sb :: unsigned-integer-size(32)-native,
+        sa :: unsigned-integer-size(32)-native,
+
+        er :: unsigned-integer-size(32)-native,
+        eg :: unsigned-integer-size(32)-native,
+        eb :: unsigned-integer-size(32)-native,
+        ea :: unsigned-integer-size(32)-native
       >>
     | ops]
   end
@@ -546,30 +563,49 @@ defmodule Scenic.Driver.Mac.Compile do
   {sr, sg, sb, sa}, {er, eg, eb, ea}) do
     [
       <<
-        @op_paint_radial :: size(8),
+        @op_paint_radial :: unsigned-integer-size(32)-native,
         cx :: float-size(32)-native,
         cy :: float-size(32)-native,
         r_in :: float-size(32)-native,
         r_out :: float-size(32)-native,
-        sr :: size(8), sg :: size(8), sb :: size(8), sa :: size(8),
-        er :: size(8), eg :: size(8), eb :: size(8), ea :: size(8)
+
+        sr :: unsigned-integer-size(32)-native,
+        sg :: unsigned-integer-size(32)-native,
+        sb :: unsigned-integer-size(32)-native,
+        sa :: unsigned-integer-size(32)-native,
+
+        er :: unsigned-integer-size(32)-native,
+        eg :: unsigned-integer-size(32)-native,
+        eb :: unsigned-integer-size(32)-native,
+        ea :: unsigned-integer-size(32)-native
       >>
     | ops]
   end
 
   defp op_paint_image(ops, image, ox, oy, ex, ey, angle, alpha) do
+    name_size = byte_size(image) + 1
+
+    # keep everything aligned on 4 byte boundaries
+    {name_size, extra_buffer} = case 4 - rem( name_size, 4 ) do
+      1 -> {name_size + 1, <<0 :: size(8)>>}
+      2 -> {name_size + 2, <<0 :: size(16)>>}
+      3 -> {name_size + 3, <<0 :: size(24)>>}
+      _ -> {name_size, <<>>}
+    end
+
     [
       <<
-        @op_paint_image :: size(8),
+        @op_paint_image :: unsigned-integer-size(32)-native,
         ox :: float-size(32)-native,
         oy :: float-size(32)-native,
         ex :: float-size(32)-native,
         ey :: float-size(32)-native,
         angle :: float-size(32)-native,
-        alpha :: size(8),
-        byte_size(image) + 1 :: unsigned-integer-size(16)-native,
+        alpha :: unsigned-integer-size(32)-native,
+        name_size :: unsigned-integer-size(32)-native,
         image :: binary,
-        0 :: size(8) # null terminate to it can be used directly
+        0 :: size(8), # null terminate to it can be used directly
+        extra_buffer :: binary
       >>
     | ops]
   end
@@ -586,7 +622,7 @@ defmodule Scenic.Driver.Mac.Compile do
   defp op_stroke_width(ops, w) do
     [
       <<
-        @op_stroke_width :: size(8),
+        @op_stroke_width :: unsigned-integer-size(32)-native,
         w :: float-size(32)-native
       >>
     | ops]
@@ -595,82 +631,123 @@ defmodule Scenic.Driver.Mac.Compile do
   defp op_stroke_color(ops, {r, g, b, a}) do
     [
       <<
-        @op_stroke_color :: size(8),
-        r :: size(8),
-        g :: size(8),
-        b :: size(8),
-        a :: size(8)
+        @op_stroke_color :: unsigned-integer-size(32)-native,
+        r :: unsigned-integer-size(32)-native,
+        g :: unsigned-integer-size(32)-native,
+        b :: unsigned-integer-size(32)-native,
+        a :: unsigned-integer-size(32)-native
       >>
     | ops]
   end
 
   defp op_stroke_paint(ops) do
-    [ << @op_stroke_paint :: size(8) >> | ops]
+    [ << @op_stroke_paint :: unsigned-integer-size(32)-native >> | ops]
   end
 
   defp op_fill_color(ops, {r, g, b, a}) do
     [
       <<
-        @op_fill_color :: size(8),
-        r :: size(8),
-        g :: size(8),
-        b :: size(8),
-        a :: size(8)
+        @op_fill_color :: unsigned-integer-size(32)-native,
+        r :: unsigned-integer-size(32)-native,
+        g :: unsigned-integer-size(32)-native,
+        b :: unsigned-integer-size(32)-native,
+        a :: unsigned-integer-size(32)-native
       >>
     | ops]
   end
 
   defp op_fill_paint(ops) do
-    [ << @op_fill_paint :: size(8) >> | ops]
+    [ << @op_fill_paint :: unsigned-integer-size(32)-native >> | ops]
   end
 
   defp op_miter_limit(ops, limit) do
     [
       <<
-        @op_miter_limit :: size(8),
+        @op_miter_limit :: unsigned-integer-size(32)-native,
         limit :: float-size(32)-native
       >>
     | ops]
   end
 
   defp op_line_cap(ops, :butt) do
-    [ << @op_line_cap :: size(8), 0 :: size(8) >> | ops]
+    [
+      <<
+        @op_line_cap :: unsigned-integer-size(32)-native,
+        0 :: unsigned-integer-size(32)-native
+      >>
+    | ops]
   end
   defp op_line_cap(ops, :round) do
-    [ << @op_line_cap :: size(8), 1 :: size(8) >> | ops]
+    [
+      <<
+        @op_line_cap :: unsigned-integer-size(32)-native,
+        1 :: unsigned-integer-size(32)-native
+      >>
+    | ops]
   end
   defp op_line_cap(ops, :square) do
-    [ << @op_line_cap :: size(8), 2 :: size(8) >> | ops]
+    [
+      <<
+        @op_line_cap :: unsigned-integer-size(32)-native, 
+        2 :: unsigned-integer-size(32)-native
+      >>
+    | ops]
   end
 
   defp op_line_join(ops, :miter) do
-    [ << @op_line_join :: size(8), 0 :: size(8) >> | ops]
+    [
+      <<
+        @op_line_join :: unsigned-integer-size(32)-native,
+        0 :: unsigned-integer-size(32)-native
+      >>
+    | ops]
   end
   defp op_line_join(ops, :round) do
-    [ << @op_line_join :: size(8), 1 :: size(8) >> | ops]
+    [
+      <<
+        @op_line_join :: unsigned-integer-size(32)-native,
+        1 :: unsigned-integer-size(32)-native
+      >>
+    | ops]
   end
   defp op_line_join(ops, :bevel) do
-    [ << @op_line_join :: size(8), 2 :: size(8) >> | ops]
+    [
+      <<
+        @op_line_join :: unsigned-integer-size(32)-native,
+        2 :: unsigned-integer-size(32)-native
+      >>
+    | ops]
   end
 
   defp op_font(ops, font) do
     font_name = to_string(font)
     name_size = byte_size(font_name) + 1
+
+    # keep everything aligned on 4 byte boundaries
+    {name_size, extra_buffer} = case 4 - rem( name_size, 4 ) do
+      1 -> {name_size + 1, <<0 :: size(8)>>}
+      2 -> {name_size + 2, <<0 :: size(16)>>}
+      3 -> {name_size + 3, <<0 :: size(24)>>}
+      _ -> {name_size, <<>>}
+    end
+
     [
       <<
-        @op_font :: size(8),
-        name_size :: unsigned-integer-size(16)-native,
+        @op_font :: unsigned-integer-size(32)-native,
+        name_size :: unsigned-integer-size(32)-native,
         font_name :: binary,
         # null terminate the name here. This allows us to use the
         # string in the script directly without copying it to a new buffer
-        0 :: size(8)    
+        0 :: size(8),
+        extra_buffer :: binary
       >>
     | ops]
   end
+
   defp op_font_blur(ops, blur) do
     [
       <<
-        @op_font_blur :: size(8),
+        @op_font_blur :: unsigned-integer-size(32)-native,
         blur :: float-size(32)-native
       >>
     | ops]
@@ -678,56 +755,38 @@ defmodule Scenic.Driver.Mac.Compile do
   defp op_font_size(ops, point_size) do
     [
       <<
-        @op_font_size :: size(8),
+        @op_font_size :: unsigned-integer-size(32)-native,
         point_size :: float-size(32)-native
       >>
     | ops]
   end
 
-  defp op_text_align(ops, :left) do
-    [ << @op_text_align :: size(8), 0b1000001 :: size(8) >> | ops]
-  end
-  defp op_text_align(ops, :center) do
-    [ << @op_text_align :: size(8), 0b1000010 :: size(8) >> | ops]
-  end
-  defp op_text_align(ops, :right) do
-    [ << @op_text_align :: size(8), 0b1000100 :: size(8) >> | ops]
-  end
-
-  defp op_text_align(ops, :left_top) do
-    [ << @op_text_align :: size(8), 0b0001001 :: size(8) >> | ops]
-  end
-  defp op_text_align(ops, :center_top) do
-    [ << @op_text_align :: size(8), 0b0001010 :: size(8) >> | ops]
-  end
-  defp op_text_align(ops, :right_top) do
-    [ << @op_text_align :: size(8), 0b0001100 :: size(8) >> | ops]
-  end
-
-  defp op_text_align(ops, :left_middle) do
-    [ << @op_text_align :: size(8), 0b0010001 :: size(8) >> | ops]
-  end
-  defp op_text_align(ops, :center_middle) do
-    [ << @op_text_align :: size(8), 0b0010010 :: size(8) >> | ops]
-  end
-  defp op_text_align(ops, :right_middle) do
-    [ << @op_text_align :: size(8), 0b0010100 :: size(8) >> | ops]
+  defp op_text_align(ops, :left), do: op_text_align(ops, 0b1000001)
+  defp op_text_align(ops, :center), do: op_text_align(ops, 0b1000010)
+  defp op_text_align(ops, :right), do: op_text_align(ops, 0b1000100)
+  defp op_text_align(ops, :left_top), do: op_text_align(ops, 0b0001001)
+  defp op_text_align(ops, :center_top), do: op_text_align(ops, 0b0001010)
+  defp op_text_align(ops, :right_top), do: op_text_align(ops, 0b0001100)
+  defp op_text_align(ops, :left_middle), do: op_text_align(ops, 0b0010001)
+  defp op_text_align(ops, :center_middle), do: op_text_align(ops, 0b0010010)
+  defp op_text_align(ops, :right_middle), do: op_text_align(ops, 0b0010100)
+  defp op_text_align(ops, :left_bottom), do: op_text_align(ops, 0b0100001)
+  defp op_text_align(ops, :center_bottom), do: op_text_align(ops, 0b0100010)
+  defp op_text_align(ops, :right_bottom), do: op_text_align(ops, 0b0100100)
+  defp op_text_align(ops, flags) when is_integer(flags) do
+    [
+      <<
+        @op_text_align :: unsigned-integer-size(32)-native,
+        flags :: unsigned-integer-size(32)-native
+      >>
+    | ops]
   end
 
-  defp op_text_align(ops, :left_bottom) do
-    [ << @op_text_align :: size(8), 0b0100001 :: size(8) >> | ops]
-  end
-  defp op_text_align(ops, :center_bottom) do
-    [ << @op_text_align :: size(8), 0b0100010 :: size(8) >> | ops]
-  end
-  defp op_text_align(ops, :right_bottom) do
-    [ << @op_text_align :: size(8), 0b0100100 :: size(8) >> | ops]
-  end
 
   defp op_text_height(ops, height) do
     [
       <<
-        @op_text_height :: size(8),
+        @op_text_height :: unsigned-integer-size(32)-native,
         height :: float-size(32)-native
       >>
     | ops]
@@ -737,11 +796,11 @@ defmodule Scenic.Driver.Mac.Compile do
 
 
   #--------------------------------------------------------
-  defp op_path_begin(ops),    do: [ <<@op_path_begin :: size(8) >> | ops]
+  defp op_path_begin(ops),    do: [ <<@op_path_begin :: unsigned-integer-size(32)-native >> | ops]
   defp op_path_move_to(ops, x, y) do
     [
       <<
-        @op_path_move_to :: size(8),
+        @op_path_move_to :: unsigned-integer-size(32)-native,
         x :: float-size(32)-native,
         y :: float-size(32)-native
       >>
@@ -750,7 +809,7 @@ defmodule Scenic.Driver.Mac.Compile do
   defp op_path_line_to(ops, x, y) do
     [
       <<
-        @op_path_line_to :: size(8),
+        @op_path_line_to :: unsigned-integer-size(32)-native,
         x :: float-size(32)-native,
         y :: float-size(32)-native
       >>
@@ -759,7 +818,7 @@ defmodule Scenic.Driver.Mac.Compile do
   defp op_path_bezier_to(ops, c1x, c1y, c2x, c2y, x, y) do
     [
       <<
-        @op_path_bezier_to :: size(8),
+        @op_path_bezier_to :: unsigned-integer-size(32)-native,
         c1x :: float-size(32)-native,
         c1y :: float-size(32)-native,
         c2x :: float-size(32)-native,
@@ -772,7 +831,7 @@ defmodule Scenic.Driver.Mac.Compile do
   defp op_path_quadratic_to(ops, cx, cy, x, y) do
     [
       <<
-        @op_path_quadratic_to :: size(8),
+        @op_path_quadratic_to :: unsigned-integer-size(32)-native,
         cx :: float-size(32)-native,
         cy :: float-size(32)-native,
         x   :: float-size(32)-native,
@@ -783,7 +842,7 @@ defmodule Scenic.Driver.Mac.Compile do
   defp op_path_arc_to(ops, x1, y1, x2, y2, radius) do
     [
       <<
-        @op_path_arc_to :: size(8),
+        @op_path_arc_to :: unsigned-integer-size(32)-native,
         x1 :: float-size(32)-native,
         y1 :: float-size(32)-native,
         x2 :: float-size(32)-native,
@@ -793,21 +852,21 @@ defmodule Scenic.Driver.Mac.Compile do
     | ops]
   end
   defp op_path_close(ops) do
-    [ << @op_path_close :: size(8) >> | ops]
+    [ << @op_path_close :: unsigned-integer-size(32)-native >> | ops]
   end
   defp op_path_winding(ops, :solid) do
     [
       <<
-        @op_path_winding :: size(8),
-        1 :: size(8),
+        @op_path_winding :: unsigned-integer-size(32)-native,
+        1 :: unsigned-integer-size(32)-native,
       >>
     | ops]
   end
   defp op_path_winding(ops, :hole) do
     [
       <<
-        @op_path_winding :: size(8),
-        0 :: size(8),
+        @op_path_winding :: unsigned-integer-size(32)-native,
+        0 :: unsigned-integer-size(32)-native,
       >>
     | ops]
   end
@@ -816,7 +875,7 @@ defmodule Scenic.Driver.Mac.Compile do
   defp op_triangle(ops, x0, y0, x1, y1, x2, y2) do
     [
       <<
-        @op_triangle :: size(8),
+        @op_triangle :: unsigned-integer-size(32)-native,
         x0 :: float-size(32)-native,
         y0 :: float-size(32)-native,
         x1 :: float-size(32)-native,
@@ -831,7 +890,7 @@ defmodule Scenic.Driver.Mac.Compile do
   defp op_rect(ops, x, y, w, h) do
     [
       <<
-        @op_rect :: size(8),
+        @op_rect :: unsigned-integer-size(32)-native,
         x :: float-size(32)-native,
         y :: float-size(32)-native,
         w :: float-size(32)-native,
@@ -843,7 +902,7 @@ defmodule Scenic.Driver.Mac.Compile do
   defp op_round_rect(ops, x, y, w, h, r) do
     [
       <<
-        @op_round_rect :: size(8),
+        @op_round_rect :: unsigned-integer-size(32)-native,
         x :: float-size(32)-native,
         y :: float-size(32)-native,
         w :: float-size(32)-native,
@@ -856,7 +915,7 @@ defmodule Scenic.Driver.Mac.Compile do
   defp op_circle(ops, cx, cy, r) do
     [
       <<
-        @op_circle :: size(8),
+        @op_circle :: unsigned-integer-size(32)-native,
         cx :: float-size(32)-native,
         cy :: float-size(32)-native,
         r :: float-size(32)-native
@@ -868,7 +927,7 @@ defmodule Scenic.Driver.Mac.Compile do
   defp op_arc(ops, cx, cy, r, start, finish, h, k ) do
     [
       <<
-        @op_arc :: size(8),
+        @op_arc :: unsigned-integer-size(32)-native,
         cx :: float-size(32)-native,
         cy :: float-size(32)-native,
         r :: float-size(32)-native,
@@ -884,7 +943,7 @@ defmodule Scenic.Driver.Mac.Compile do
   defp op_sector(ops, cx, cy, r, start, finish, h, k ) do
     [
       <<
-        @op_sector :: size(8),
+        @op_sector :: unsigned-integer-size(32)-native,
         cx :: float-size(32)-native,
         cy :: float-size(32)-native,
         r :: float-size(32)-native,
@@ -900,7 +959,7 @@ defmodule Scenic.Driver.Mac.Compile do
   defp op_ellipse(ops, cx, cy, rx, ry) do
     [
       <<
-        @op_ellipse :: size(8),
+        @op_ellipse :: unsigned-integer-size(32)-native,
         cx :: float-size(32)-native,
         cy :: float-size(32)-native,
         rx :: float-size(32)-native,
@@ -910,14 +969,25 @@ defmodule Scenic.Driver.Mac.Compile do
   end
 
   defp op_text(ops, x, y, text) do
+    text_size = byte_size(text) + 1
+
+    # keep everything aligned on 4 byte boundaries
+    {text_size, extra_buffer} = case 4 - rem( text_size, 4 ) do
+      1 -> {text_size + 1, <<0 :: size(8)>>}
+      2 -> {text_size + 2, <<0 :: size(16)>>}
+      3 -> {text_size + 3, <<0 :: size(24)>>}
+      _ -> {text_size, <<>>}
+    end
+
     [
       <<
-        @op_text :: size(8),
+        @op_text :: unsigned-integer-size(32)-native,
         x :: float-size(32)-native,
         y :: float-size(32)-native,
-        byte_size(text) + 1 :: unsigned-integer-size(32)-native,
+        text_size :: unsigned-integer-size(32)-native,
         text :: binary,
-        0 :: size(8) # null terminate the string so it can be used directly
+        0 :: size(8), # null terminate the string so it can be used directly
+        extra_buffer :: binary
       >>
     | ops]
   end
@@ -925,8 +995,8 @@ defmodule Scenic.Driver.Mac.Compile do
 
 
   #--------------------------------------------------------
-  defp op_fill(ops),    do: [ <<@op_fill :: size(8) >> | ops]
-  defp op_stroke(ops),  do: [ <<@op_stroke :: size(8) >> | ops]
+  defp op_fill(ops),    do: [ <<@op_fill :: unsigned-integer-size(32)-native >> | ops]
+  defp op_stroke(ops),  do: [ <<@op_stroke :: unsigned-integer-size(32)-native >> | ops]
 
 
 
@@ -934,7 +1004,7 @@ defmodule Scenic.Driver.Mac.Compile do
 
 
   #--------------------------------------------------------
-  defp op_terminate(ops), do: [ <<@op_terminate :: size(8) >> | ops]
+  defp op_terminate(ops), do: [ <<@op_terminate :: unsigned-integer-size(32)-native >> | ops]
 
 end
 

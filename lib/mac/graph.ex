@@ -275,7 +275,7 @@ defmodule Scenic.Driver.Mac.Graph do
       state = Map.put(state, :driver, driver)
       [
         <<
-          @cmd_render_graph,
+          @cmd_render_graph :: unsigned-integer-size(32)-native,
           dl_id :: unsigned-integer-size(32)-native
         >>,
         Mac.Compile.graph( graph, graph_key, state )
@@ -291,7 +291,7 @@ defmodule Scenic.Driver.Mac.Graph do
         # likely running in a temporary process.
         # Send a fake completion event as if it came from the port.
         msg = <<
-          @msg_draw_ready_id,
+          @msg_draw_ready_id :: unsigned-integer-size(32)-native,
           dl_id :: unsigned-integer-size(32)-native
         >>
         Process.send(driver, {port, {:data, msg}}, [])

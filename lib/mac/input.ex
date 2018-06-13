@@ -88,7 +88,7 @@ defmodule Scenic.Driver.Mac.Input do
 
   #--------------------------------------------------------
   def handle_port_message( <<
-    @msg_ready_id,
+    @msg_ready_id :: unsigned-integer-size(32)-native,
     start_dl :: integer-size(32)-native
   >>, %{
     viewport: viewport,
@@ -111,7 +111,7 @@ defmodule Scenic.Driver.Mac.Input do
   # this feels like it should live in graph.ex, but it is input from
   # the driver, so it is here...
   def handle_port_message( <<
-    @msg_draw_ready_id,
+    @msg_draw_ready_id :: unsigned-integer-size(32)-native,
     id :: unsigned-integer-size(32)-native
   >>, %{
     currently_drawing: currently_drawing
@@ -129,7 +129,7 @@ defmodule Scenic.Driver.Mac.Input do
 
   #--------------------------------------------------------
   def handle_port_message( <<
-    @msg_reshape_id,
+    @msg_reshape_id :: unsigned-integer-size(32)-native,
     window_width :: unsigned-integer-size(32)-native,
     window_height :: unsigned-integer-size(32)-native,
     frame_width :: unsigned-integer-size(32)-native,
@@ -146,43 +146,60 @@ defmodule Scenic.Driver.Mac.Input do
   end
 
   #--------------------------------------------------------
-  def handle_port_message( <<@msg_close_id>>, state ) do
+  def handle_port_message( <<
+    @msg_close_id :: unsigned-integer-size(32)-native>>,
+  state ) do
     GenServer.cast(self(), :close)
     { :noreply, Map.put(state, :closing, true) }
   end
 
   #--------------------------------------------------------
-  def handle_port_message( <<@msg_puts_id>> <> msg, state ) do
+  def handle_port_message( <<
+    @msg_puts_id :: unsigned-integer-size(32)-native>> <> msg,
+  state ) do
     IO.puts( msg )
     { :noreply, state }
   end
 
   #--------------------------------------------------------
-  def handle_port_message( <<@msg_write_id>> <> msg, state ) do
+  def handle_port_message( <<
+    @msg_write_id :: unsigned-integer-size(32)-native>> <> msg,
+  state ) do
     IO.write( msg )
     { :noreply, state }
   end
 
   #--------------------------------------------------------
-  def handle_port_message( <<@msg_inspect_id>> <> msg, state ) do
+  def handle_port_message(<<
+    @msg_inspect_id :: unsigned-integer-size(32)-native>> <> msg,
+  state ) do
     IO.inspect(msg)
     { :noreply, state }
   end
 
   #--------------------------------------------------------
-  def handle_port_message( <<@msg_cache_miss>> <> key, %{port: port} = state ) do
+  def handle_port_message(
+    <<
+      @msg_cache_miss :: unsigned-integer-size(32)-native
+    >> <> key,
+    %{port: port} = state )
+  do
     Cache.load_texture( key, port )
     { :noreply, state }
   end
 
   #--------------------------------------------------------
-  def handle_port_message( <<@msg_font_miss>> <> key, %{port: port} = state ) do
+  def handle_port_message( <<
+    @msg_font_miss :: unsigned-integer-size(32)-native>> <> key,
+    %{port: port} = state )
+  do
     Font.load_font( key, port )
     { :noreply, state }
   end
 
   #--------------------------------------------------------
-  def handle_port_message( <<@msg_key_id :: size(8),
+  def handle_port_message( <<
+    @msg_key_id :: unsigned-integer-size(32)-native,
     key       :: unsigned-integer-native-size(32),
     _scancode :: unsigned-integer-native-size(32),
     action    :: unsigned-integer-native-size(32),
@@ -197,7 +214,8 @@ defmodule Scenic.Driver.Mac.Input do
   end
 
   #--------------------------------------------------------
-  def handle_port_message( <<@msg_char_id :: size(8),
+  def handle_port_message( <<
+    @msg_char_id :: unsigned-integer-size(32)-native,
     codepoint :: unsigned-integer-native-size(32),
     mods      :: unsigned-integer-native-size(32),
   >>, %{viewport: viewport} = state ) do
@@ -209,7 +227,8 @@ defmodule Scenic.Driver.Mac.Input do
   end
 
   #--------------------------------------------------------
-  def handle_port_message( <<@msg_cursor_pos_id :: size(8),
+  def handle_port_message( <<
+    @msg_cursor_pos_id :: unsigned-integer-size(32)-native,
     x :: float-native-size(32),
     y :: float-native-size(32)
   >>, state ) do
@@ -217,7 +236,8 @@ defmodule Scenic.Driver.Mac.Input do
   end
 
   #--------------------------------------------------------
-  def handle_port_message( <<@msg_mouse_button_id :: size(8),
+  def handle_port_message( <<
+    @msg_mouse_button_id :: unsigned-integer-size(32)-native,
     button  :: unsigned-integer-native-size(32),
     action  :: unsigned-integer-native-size(32),
     mods    :: unsigned-integer-native-size(32),
@@ -233,7 +253,8 @@ defmodule Scenic.Driver.Mac.Input do
   end
 
   #--------------------------------------------------------
-  def handle_port_message( <<@msg_mouse_scroll_id :: size(8),
+  def handle_port_message( <<
+    @msg_mouse_scroll_id :: unsigned-integer-size(32)-native,
     x_offset  :: float-native-size(32),
     y_offset  :: float-native-size(32),
     x_pos     :: float-native-size(32),
@@ -246,7 +267,8 @@ defmodule Scenic.Driver.Mac.Input do
   end
 
   #--------------------------------------------------------
-  def handle_port_message( <<@msg_cursor_enter_id :: size(8),
+  def handle_port_message( <<
+    @msg_cursor_enter_id :: unsigned-integer-size(32)-native,
     0   :: integer-native-size(32),
     x_pos     :: float-native-size(32),
     y_pos     :: float-native-size(32)
@@ -258,7 +280,8 @@ defmodule Scenic.Driver.Mac.Input do
   end
 
   #--------------------------------------------------------
-  def handle_port_message( <<@msg_cursor_enter_id :: size(8),
+  def handle_port_message( <<
+    @msg_cursor_enter_id :: unsigned-integer-size(32)-native,
     1   :: integer-native-size(32),
     x_pos     :: float-native-size(32),
     y_pos     :: float-native-size(32)
@@ -270,7 +293,10 @@ defmodule Scenic.Driver.Mac.Input do
   end
 
   #--------------------------------------------------------
-  def handle_port_message( <<id :: size(8), bin :: binary >>, state ) do
+  def handle_port_message( <<
+    id :: unsigned-integer-size(32)-native,
+    bin :: binary >>, state )
+  do
     IO.puts "Unhandled port messages id: #{id}, msg: #{inspect(bin)}"
     { :noreply, state }
   end

@@ -44,7 +44,7 @@ defmodule Scenic.Driver.Mac.Port do
 #define   CMD_PUT_TX_FILE           0x35
 #define   CMD_PUT_TX_RAW            0x36
 
-
+  import IEx
 
 
   #============================================================================
@@ -85,12 +85,22 @@ defmodule Scenic.Driver.Mac.Port do
 
   @doc false
   def clear_dl(port, dl_id) do
-    Port.command(port, <<@cmd_clear_dl, dl_id :: unsigned-integer-size(32)-native>>)
+    Port.command(port,
+      <<
+        @cmd_clear_dl :: unsigned-integer-size(32)-native,
+        dl_id :: unsigned-integer-size(32)-native
+      >>
+    )
   end
 
   @doc false
   def set_root_dl(port, root_dl) do
-    Port.command(port, <<@cmd_set_root_dl, root_dl :: integer-size(32)-native>>)
+    Port.command(port,
+      <<
+        @cmd_set_root_dl :: unsigned-integer-size(32)-native,
+        root_dl :: integer-size(32)-native
+      >>
+    )
   end
 
   #============================================================================
@@ -136,7 +146,8 @@ defmodule Scenic.Driver.Mac.Port do
   #============================================================================
   @doc false
   def handle_call( :query_stats, _from, %{port: port} = state ) do
-    Port.command(port, <<@cmd_query_stats>>)
+    Port.command(port, <<@cmd_query_stats :: unsigned-integer-size(32)-native>>)
+pry()
     reply = receive do
       {^port, {:data, <<@msg_stats_id :: size(8),
         input_flags :: unsigned-integer-native-size(32),
@@ -186,7 +197,7 @@ defmodule Scenic.Driver.Mac.Port do
       true -> h
     end
     msg = <<
-      @cmd_reshape,
+      @cmd_reshape :: unsigned-integer-size(32)-native,
       w :: integer-size(32)-native,
       h :: integer-size(32)-native
     >>
@@ -196,7 +207,7 @@ defmodule Scenic.Driver.Mac.Port do
 
   def handle_cast( {:position, {x, y}}, %{port: port} = state) when is_integer(x) and is_integer(y) do
     msg = <<
-      @cmd_position,
+      @cmd_position :: unsigned-integer-size(32)-native,
       x :: integer-size(32)-native,
       y :: integer-size(32)-native
     >>
@@ -206,43 +217,43 @@ defmodule Scenic.Driver.Mac.Port do
 
 if Mix.env() == :dev do
   def handle_cast( :crash, %{port: port} = state) do
-    Port.command(port, <<@cmd_crash>>)
+    Port.command(port, <<@cmd_crash :: unsigned-integer-size(32)-native>>)
     {:noreply, state}
   end
 end
 
   def handle_cast( :close, %{port: port} = state) do
-    Port.command(port, <<@cmd_close>>)
+    Port.command(port, <<@cmd_close :: unsigned-integer-size(32)-native>>)
     {:noreply, state}
   end
 
   def handle_cast( :focus, %{port: port} = state) do
-    Port.command(port, <<@cmd_focus>>)
+    Port.command(port, <<@cmd_focus :: unsigned-integer-size(32)-native>>)
     {:noreply, state}
   end
 
   def handle_cast( :iconify, %{port: port} = state) do
-    Port.command(port, <<@cmd_iconify>>)
+    Port.command(port, <<@cmd_iconify :: unsigned-integer-size(32)-native>>)
     {:noreply, state}
   end
 
   def handle_cast( :maximize, %{port: port} = state) do
-    Port.command(port, <<@cmd_maximize>>)
+    Port.command(port, <<@cmd_maximize :: unsigned-integer-size(32)-native>>)
     {:noreply, state}
   end
 
   def handle_cast( :restore, %{port: port} = state) do
-    Port.command(port, <<@cmd_restore>>)
+    Port.command(port, <<@cmd_restore :: unsigned-integer-size(32)-native>>)
     {:noreply, state}
   end
 
   def handle_cast( :show, %{port: port} = state) do
-    Port.command(port, <<@cmd_show>>)
+    Port.command(port, <<@cmd_show :: unsigned-integer-size(32)-native>>)
     {:noreply, state}
   end
 
   def handle_cast( :hide, %{port: port} = state) do
-    Port.command(port, <<@cmd_hide>>)
+    Port.command(port, <<@cmd_hide :: unsigned-integer-size(32)-native>>)
     {:noreply, state}
   end
 

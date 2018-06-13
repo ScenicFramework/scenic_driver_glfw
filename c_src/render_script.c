@@ -12,6 +12,7 @@ functions to play a compiled render script
 
   #include <stdlib.h>
   #include <GLFW/glfw3.h>
+  // #include <GLES2/gl2.h>
 
   #include "nanovg/nanovg.h"
   #include "types.h"
@@ -135,10 +136,10 @@ void* get_script( window_data_t* p_data, GLuint id ) {
 
 typedef struct __attribute__((__packed__)) 
 {
-  byte      r;
-  byte      g;
-  byte      b;
-  byte      a;
+  GLuint      r;
+  GLuint      g;
+  GLuint      b;
+  GLuint      a;
 } color_t;
 
 typedef struct __attribute__((__packed__)) 
@@ -253,14 +254,14 @@ typedef struct __attribute__((__packed__))
   GLfloat     sy;
   GLfloat     ex;
   GLfloat     ey;
-  byte        sr;
-  byte        sg;
-  byte        sb;
-  byte        sa;
-  byte        er;
-  byte        eg;
-  byte        eb;
-  byte        ea;
+  GLuint      sr;
+  GLuint      sg;
+  GLuint      sb;
+  GLuint      sa;
+  GLuint      er;
+  GLuint      eg;
+  GLuint      eb;
+  GLuint      ea;
 } linear_gradient_t;
 
 typedef struct __attribute__((__packed__)) 
@@ -271,14 +272,14 @@ typedef struct __attribute__((__packed__))
   GLfloat     h;
   GLfloat     radius;
   GLfloat     feather;
-  byte        sr;
-  byte        sg;
-  byte        sb;
-  byte        sa;
-  byte        er;
-  byte        eg;
-  byte        eb;
-  byte        ea;
+  GLuint      sr;
+  GLuint      sg;
+  GLuint      sb;
+  GLuint      sa;
+  GLuint      er;
+  GLuint      eg;
+  GLuint      eb;
+  GLuint      ea;
 } box_gradient_t;
 
 typedef struct __attribute__((__packed__)) 
@@ -287,14 +288,14 @@ typedef struct __attribute__((__packed__))
   GLfloat     cy;
   GLfloat     r_in;
   GLfloat     r_out;
-  byte        sr;
-  byte        sg;
-  byte        sb;
-  byte        sa;
-  byte        er;
-  byte        eg;
-  byte        eb;
-  byte        ea;
+  GLuint      sr;
+  GLuint      sg;
+  GLuint      sb;
+  GLuint      sa;
+  GLuint      er;
+  GLuint      eg;
+  GLuint      eb;
+  GLuint      ea;
 } radial_gradient_t;
 
 typedef struct __attribute__((__packed__)) 
@@ -304,8 +305,8 @@ typedef struct __attribute__((__packed__))
   GLfloat     ex;
   GLfloat     ey;
   GLfloat     angle;
-  byte        alpha;
-  GLushort    key_size;
+  GLuint      alpha;
+  GLuint      key_size;
 } image_pattern_t;
 
 typedef struct __attribute__((__packed__)) 
@@ -444,25 +445,25 @@ void* miter_limit( NVGcontext* p_ctx, void* p_script ) {
 }
 
 void* line_cap( NVGcontext* p_ctx, void* p_script ) {
-  byte join = *(byte*)p_script;
+  uint32_t join = *(uint32_t*)p_script;
   switch( join ) {
     case 0:   nvgLineCap(p_ctx, NVG_BUTT);     break;
     case 1:   nvgLineCap(p_ctx, NVG_ROUND);     break;
     case 2:   nvgLineCap(p_ctx, NVG_SQUARE);     break;
     default: break;
   }
-  return p_script + sizeof(byte);
+  return p_script + sizeof(uint32_t);
 }
 
 void* line_join( NVGcontext* p_ctx, void* p_script ) {
-  byte join = *(byte*)p_script;
+  uint32_t join = *(uint32_t*)p_script;
   switch( join ) {
     case 0:   nvgLineJoin(p_ctx, NVG_MITER);     break;
     case 1:   nvgLineJoin(p_ctx, NVG_ROUND);     break;
     case 2:   nvgLineJoin(p_ctx, NVG_BEVEL);     break;
     default: break;
   }
-  return p_script + sizeof(byte);
+  return p_script + sizeof(uint32_t);
 }
 
 void* global_alpha( NVGcontext* p_ctx, void* p_script ) {
@@ -513,7 +514,6 @@ void* quadratic_to( NVGcontext* p_ctx, void* p_script ) {
 }
 
 void* arc_to( NVGcontext* p_ctx, void* p_script ) {
-  send_puts("arc_to");
   arc_to_t* arc = (arc_to_t*)p_script;
   nvgArcTo(p_ctx, arc->x1, arc->y1, arc->x2, arc->y2, arc->radius);
   return p_script + sizeof(arc_to_t);
@@ -560,23 +560,6 @@ void* circle( NVGcontext* p_ctx, void* p_script ) {
   nvgCircle(p_ctx, circle->cx, circle->cy, circle->r);
   return p_script + sizeof(circle_t);
 }
-
-
-
-
-
-
-// void* arc( NVGcontext* p_ctx, void* p_script ) {
-// send_puts("Arc");
-//   arc_t* arc = (arc_t*)p_script;
-//   if ( arc->direction ) {
-//     nvgArc(p_ctx, arc->cx, arc->cy, arc->radius, arc->a0, arc->a1, NVG_CCW);
-//   } else {
-//     nvgArc(p_ctx, arc->cx, arc->cy, arc->radius, arc->a0, arc->a1, NVG_CW);
-//   }
-//   return p_script + sizeof(arc_t);
-// }
-
 
 void* arc( NVGcontext* p_ctx, void* p_script ) {
   // bring sector data onto the stack
@@ -727,8 +710,8 @@ void* tx_matrix( NVGcontext* p_ctx, void* p_script ) {
 // font styles
 
 void* font( NVGcontext* p_ctx, void* p_script ) {
-  GLushort  name_length = *(GLushort*)p_script;
-  p_script += sizeof(GLushort);
+  GLuint  name_length = *(GLuint*)p_script;
+  p_script += sizeof(GLuint);
 
   // get the id for the font. If it isn't loaded, request it
   int font_id = nvgFindFont(p_ctx, p_script);
@@ -753,8 +736,8 @@ void* font_size( NVGcontext* p_ctx, void* p_script ) {
 }
 
 void* text_align( NVGcontext* p_ctx, void* p_script ) {
-  nvgTextAlign(p_ctx, *(byte*)p_script);
-  return p_script + sizeof(byte);
+  nvgTextAlign(p_ctx, *(uint32_t*)p_script);
+  return p_script + sizeof(uint32_t);
 }
 
 void* text_height( NVGcontext* p_ctx, void* p_script ) {
@@ -771,6 +754,9 @@ void* text_height( NVGcontext* p_ctx, void* p_script ) {
 void run_script( GLuint script_id, window_data_t* p_data ) {
   char buff[200];
 
+  // sprintf(buff, "script id: %d", script_id);
+  // send_puts(buff);
+
   // get the script in question. bail if it isn't there
   void* p_script = get_script( p_data, script_id );
   if (p_script == NULL) {
@@ -783,13 +769,16 @@ void run_script( GLuint script_id, window_data_t* p_data ) {
   NVGcontext* p_ctx = p_data->context.p_ctx;
 
   // get the first op
-  byte op = *(byte*)p_script;
+  GLuint op = *(GLuint*)p_script;
 
   // loop though the script, running each command in turn.
   // recurse into more script calls if necessary
   while ( op != OP_TERMINATE ) {
+    // sprintf(buff, "op: 0x%X", op);
+    // send_puts(buff);
+
     // advance the pointer past the op code
-    p_script += sizeof(byte);
+    p_script += sizeof(GLuint);
 
     // take the appropriate action based on the command id
     switch( op ) {
@@ -878,6 +867,6 @@ void run_script( GLuint script_id, window_data_t* p_data ) {
     }
 
     // prep the next op code
-    op = *(byte*)p_script;
+    op = *(GLuint*)p_script;
   }
 }

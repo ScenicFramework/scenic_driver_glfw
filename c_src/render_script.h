@@ -11,4 +11,4 @@ void* get_script( window_data_t* p_data, GLuint id );
 void delete_script( window_data_t* p_data, GLuint id );
 void delete_all( window_data_t* p_data );
 
-void run_script( GLuint script_id, window_data_t* p_window_data );
+void run_script( GLuint script_id, window_data_t* p_data );

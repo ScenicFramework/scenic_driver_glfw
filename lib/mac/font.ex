@@ -8,7 +8,7 @@ defmodule Scenic.Driver.Mac.Font do
   alias Scenic.Cache
   require Logger
 
-  import IEx
+  # import IEx
 
   @system_fonts      %{
     "roboto" =>       "/fonts/Roboto/Roboto-Regular.ttf",
@@ -43,9 +43,9 @@ defmodule Scenic.Driver.Mac.Font do
     # should probably confirm a hash or something here
     # send the message to the C driver to load the font
     <<
-      @cmd_load_font_file,
-      byte_size(name) + 1 :: unsigned-integer-size(16)-native,
-      byte_size(path) + 1 :: unsigned-integer-size(16)-native,
+      @cmd_load_font_file :: unsigned-integer-size(32)-native,
+      byte_size(name) + 1 :: unsigned-integer-size(32)-native,
+      byte_size(path) + 1 :: unsigned-integer-size(32)-native,
       name :: binary,
       0 :: size(8),     # null terminate so it can be used directly
       path :: binary,
@@ -57,13 +57,12 @@ defmodule Scenic.Driver.Mac.Font do
   #--------------------------------------------------------
   defp load_cache_font( font_key, port ) do
     with {:ok, font_blob} <- Cache.fetch(font_key) do
-pry()
       # send the message to the C driver to load the font
       [
         <<
-          @cmd_load_font_blob,
-          byte_size(font_key) :: unsigned-integer-size(16)-native,
-          byte_size(font_blob) :: unsigned-integer-size(16)-native
+          @cmd_load_font_blob :: unsigned-integer-size(32)-native,
+          byte_size(font_key) :: unsigned-integer-size(32)-native,
+          byte_size(font_blob) :: unsigned-integer-size(32)-native
         >>,
         font_key,
         font_blob
@@ -84,7 +83,7 @@ pry()
     # send the message to the C driver to load the font
     [
       <<
-        @cmd_free_font,
+        @cmd_free_font :: unsigned-integer-size(32)-native,
         byte_size(name) :: unsigned-integer-size(16)-native,
       >>,
       name

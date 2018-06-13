@@ -247,38 +247,38 @@ bool read_bytes_down( void* p_buff, int bytes_to_read, int* p_bytes_to_remaining
 //---------------------------------------------------------
 void send_puts( const char* msg ) {
   uint32_t msg_len = strlen(msg);
-  uint32_t cmd_len = msg_len + 1;
-  byte cmd = MSG_OUT_PUTS;
+  uint32_t cmd_len = msg_len + sizeof(uint32_t);
+  uint32_t cmd = MSG_OUT_PUTS;
 
   if (f_little_endian) cmd_len = SWAP_UINT32(cmd_len);
 
   write_exact((byte*)&cmd_len, sizeof(uint32_t));
-  write_exact(&cmd, sizeof(byte));
+  write_exact((byte*)&cmd, sizeof(uint32_t));
   write_exact((byte*)msg, msg_len);
 }
 
 //---------------------------------------------------------
 void send_write( const char* msg ) {
   uint32_t msg_len = strlen(msg);
-  uint32_t cmd_len = msg_len + 1;
-  byte cmd = MSG_OUT_WRITE;
+  uint32_t cmd_len = msg_len + sizeof(uint32_t);
+  uint32_t cmd = MSG_OUT_WRITE;
 
   if (f_little_endian) cmd_len = SWAP_UINT32(cmd_len);
 
   write_exact((byte*)&cmd_len, sizeof(uint32_t));
-  write_exact(&cmd, sizeof(byte));
+  write_exact((byte*)&cmd, sizeof(uint32_t));
   write_exact((byte*)msg, msg_len);
 }
 
 //---------------------------------------------------------
 void send_inspect( void* data, int length ) {
-  uint32_t cmd_len = length + 1;
-  byte cmd = MSG_OUT_INSPECT;
+  uint32_t cmd_len = length + sizeof(uint32_t);
+  uint32_t cmd = MSG_OUT_INSPECT;
 
   if (f_little_endian) cmd_len = SWAP_UINT32(cmd_len);
 
   write_exact((byte*)&cmd_len, sizeof(uint32_t));
-  write_exact(&cmd, sizeof(byte));
+  write_exact((byte*)&cmd, sizeof(uint32_t));
   write_exact(data, length);
 }
 
@@ -286,37 +286,37 @@ void send_inspect( void* data, int length ) {
 //---------------------------------------------------------
 void send_cache_miss( const char* key ) {
   uint32_t msg_len = strlen(key);
-  uint32_t cmd_len = msg_len + 1;
-  byte cmd = MSG_OUT_CACHE_MISS;
+  uint32_t cmd_len = msg_len + sizeof(uint32_t);
+  uint32_t cmd = MSG_OUT_CACHE_MISS;
 
   if (f_little_endian) cmd_len = SWAP_UINT32(cmd_len);
 
   write_exact((byte*)&cmd_len, sizeof(uint32_t));
-  write_exact(&cmd, sizeof(byte));
+  write_exact((byte*)&cmd, sizeof(uint32_t));
   write_exact((byte*)key, msg_len);
 }
 
 //---------------------------------------------------------
 void send_font_miss( const char* key ) {
   uint32_t msg_len = strlen(key);
-  uint32_t cmd_len = msg_len + 1;
-  byte cmd = MSG_OUT_FONT_MISS;
+  uint32_t cmd_len = msg_len + sizeof(uint32_t);
+  uint32_t cmd = MSG_OUT_FONT_MISS;
 
   if (f_little_endian) cmd_len = SWAP_UINT32(cmd_len);
 
   write_exact((byte*)&cmd_len, sizeof(uint32_t));
-  write_exact(&cmd, sizeof(byte));
+  write_exact((byte*)&cmd, sizeof(uint32_t));
   write_exact((byte*)key, msg_len);
 }
 
 //---------------------------------------------------------
 typedef struct __attribute__((__packed__)) 
 {
-  unsigned char   msg_id;
-  int             window_width;
-  int             window_height;
-  int             frame_width;
-  int             frame_height;
+  uint32_t              msg_id;
+  uint32_t             window_width;
+  uint32_t             window_height;
+  uint32_t             frame_width;
+  uint32_t             frame_height;
 } msg_reshape_t;
 
 void send_reshape(int window_width, int window_height, int frame_width, int frame_height) {
@@ -331,11 +331,11 @@ void send_reshape(int window_width, int window_height, int frame_width, int fram
 //---------------------------------------------------------
 typedef struct __attribute__((__packed__)) 
 {
-  unsigned char   msg_id;
-  unsigned int    key;
-  unsigned int    scancode;
-  unsigned int    action;
-  unsigned int    mods;
+  uint32_t    msg_id;
+  uint32_t    key;
+  uint32_t    scancode;
+  uint32_t    action;
+  uint32_t    mods;
 } msg_key_t;
 
 void send_key(int key, int scancode, int action, int mods) {
@@ -346,9 +346,9 @@ void send_key(int key, int scancode, int action, int mods) {
 //---------------------------------------------------------
 typedef struct __attribute__((__packed__)) 
 {
-  unsigned char   msg_id;
-  unsigned int    codepoint;
-  unsigned int    mods;
+  uint32_t   msg_id;
+  uint32_t    codepoint;
+  uint32_t    mods;
 } msg_codepoint_t;
 
 void send_codepoint(unsigned int codepoint, int mods) {
@@ -359,7 +359,7 @@ void send_codepoint(unsigned int codepoint, int mods) {
 //---------------------------------------------------------
 typedef struct __attribute__((__packed__)) 
 {
-  unsigned char   msg_id;
+  uint32_t   msg_id;
   float           x;
   float           y;
 } msg_cursor_pos_t;
@@ -372,10 +372,10 @@ void send_cursor_pos(float xpos, float ypos) {
 //---------------------------------------------------------
 typedef struct __attribute__((__packed__)) 
 {
-  unsigned char   msg_id;
-  unsigned int    button;
-  unsigned int    action;
-  unsigned int    mods;
+  uint32_t   msg_id;
+  uint32_t    button;
+  uint32_t    action;
+  uint32_t    mods;
   float           xpos;
   float           ypos;
 } msg_mouse_button_t;
@@ -388,7 +388,7 @@ void send_mouse_button(int button, int action, int mods, float xpos, float ypos)
 //---------------------------------------------------------
 typedef struct __attribute__((__packed__)) 
 {
-  unsigned char   msg_id;
+  uint32_t   msg_id;
   float           x_offset;
   float           y_offset;
   float           x;
@@ -403,8 +403,8 @@ void send_scroll(float xoffset, float yoffset, float xpos, float ypos) {
 //---------------------------------------------------------
 typedef struct __attribute__((__packed__)) 
 {
-  unsigned char   msg_id;
-  int             entered;
+  uint32_t   msg_id;
+  int32_t             entered;
   float           x;
   float           y;
 } msg_cursor_enter_t;
@@ -423,26 +423,26 @@ void send_close() {
 //---------------------------------------------------------
 typedef struct __attribute__((__packed__)) 
 {
-  unsigned char   msg_id;
-  int             empty_dl;
+  uint32_t   msg_id;
+  int32_t             empty_dl;
 } msg_ready_t;
-
-void send_ready( int empty_dl ) {
-  msg_ready_t  msg = { MSG_OUT_READY, empty_dl };
+void send_ready( int root_id ) {
+  msg_ready_t  msg = { MSG_OUT_READY, root_id };
   write_cmd( (byte*)&msg, sizeof(msg_ready_t) );
 }
 
 //---------------------------------------------------------
 typedef struct __attribute__((__packed__)) 
 {
-  unsigned char   msg_id;
-  unsigned int    id;
+  uint32_t   msg_id;
+  uint32_t    id;
 } msg_draw_ready_t;
 
 void send_draw_ready( unsigned int id ) {
   msg_ready_t  msg = { MSG_OUT_DRAW_READY, id };
   write_cmd( (byte*)&msg, sizeof(msg_draw_ready_t) );
 }
+
 
 //=============================================================================
 // incoming messages
@@ -451,8 +451,8 @@ void send_draw_ready( unsigned int id ) {
 //---------------------------------------------------------
 typedef struct __attribute__((__packed__)) 
 {
-  unsigned char   msg_id;
-  unsigned int    input_flags;
+  uint32_t        msg_id;
+  uint32_t        input_flags;
   int             xpos;
   int             ypos;
   int             width;
@@ -547,8 +547,8 @@ void receive_input( int* p_msg_length, GLFWwindow* window ) {
 //---------------------------------------------------------
 typedef struct __attribute__((__packed__)) 
 {
-  int             x_w;
-  int             y_h;
+  int32_t             x_w;
+  int32_t             y_h;
 } cmd_move_t;
 void receive_reshape( int* p_msg_length, GLFWwindow* window ) {
   cmd_move_t move_data;
@@ -670,8 +670,8 @@ void receive_set_root( int* p_msg_length, GLFWwindow* window ) {
 //---------------------------------------------------------
 typedef struct __attribute__((__packed__)) 
 {
-  GLushort name_length;
-  GLushort data_length;
+  GLuint name_length;
+  GLuint data_length;
 } font_info_t;
 
 void receive_load_font_file( int* p_msg_length, GLFWwindow* window ) {
@@ -718,8 +718,8 @@ bool dispatch_message( int msg_length, GLFWwindow* window ) {
   bool render = false;
 
   // read the message id
-  byte msg_id;
-  read_bytes_down( &msg_id, 1, &msg_length);  
+  uint32_t msg_id;
+  read_bytes_down( &msg_id, sizeof(uint32_t), &msg_length);  
 
   char buff[200];
   // sprintf(buff, "start dispatch_message 0x%02X", msg_id);
@@ -773,7 +773,7 @@ bool dispatch_message( int msg_length, GLFWwindow* window ) {
     case CMD_CRASH:           receive_crash();                                break;
 
     default:
-      sprintf( buff, "MAC unknown message: 0x%02X", msg_id );
+      sprintf( buff, "Unknown message: 0x%02X", msg_id );
       send_puts( buff );
   }
 
@@ -786,9 +786,7 @@ bool dispatch_message( int msg_length, GLFWwindow* window ) {
     free(p);
   }
 
-  sprintf(buff, "end dispatch_message %d", msg_id);
   check_gl_error( buff );
-
 
   return render;
 }

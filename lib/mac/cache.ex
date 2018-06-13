@@ -29,7 +29,7 @@ defmodule Scenic.Driver.Mac.Cache do
   #--------------------------------------------------------
   def handle_cast( {:cache_delete, key}, %{port: port, ready: true} = state) do
     <<
-      @cmd_free_tx_id,
+      @cmd_free_tx_id :: unsigned-integer-size(32)-native,
       byte_size(key) + 1 :: unsigned-integer-size(32)-native,
       key :: binary,
       0 :: size(8)
@@ -60,7 +60,7 @@ defmodule Scenic.Driver.Mac.Cache do
   #--------------------------------------------------------
   defp send_texture( _key, {width, height, depth, pixels}, port ) do
     <<
-      @cmd_put_tx_raw,
+      @cmd_put_tx_raw :: unsigned-integer-size(32)-native,
       width :: unsigned-integer-size(32)-native,
       height :: unsigned-integer-size(32)-native,
       depth :: unsigned-integer-size(8),
@@ -73,7 +73,7 @@ defmodule Scenic.Driver.Mac.Cache do
   #--------------------------------------------------------
   defp send_texture( key, data, port ) when is_binary(data) do
     <<
-      @cmd_put_tx_file,
+      @cmd_put_tx_file :: unsigned-integer-size(32)-native,
       byte_size(key) + 1 :: unsigned-integer-size(32)-native,
       byte_size(data) :: unsigned-integer-size(32)-native,
       key :: binary,
