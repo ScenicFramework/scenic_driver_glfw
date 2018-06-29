@@ -212,15 +212,15 @@ defmodule Scenic.Driver.Mac.Compile do
   end
 
   defp do_compile_primitive( ops,
-    %{data: {Primitive.Arc, {{x, y}, radius, start, finish, h, k}} }, _, _
+    %{data: {Primitive.Arc, {{x, y}, radius, start, finish}} }, _, _
   ) do
-    op_arc( ops, x, y, radius, start, finish, h, k )
+    op_arc( ops, x, y, radius, start, finish )
   end
 
   defp do_compile_primitive( ops,
-    %{data: {Primitive.Sector, {{x, y}, radius, start, finish, h, k}} }, _, _
+    %{data: {Primitive.Sector, {{x, y}, radius, start, finish}} }, _, _
   ) do
-    op_sector( ops, x, y, radius, start, finish, h, k )
+    op_sector( ops, x, y, radius, start, finish )
   end
 
   defp do_compile_primitive( ops,
@@ -924,7 +924,7 @@ defmodule Scenic.Driver.Mac.Compile do
   end
 
   # defp op_arc(ops,_,_,_, start, finish, _,_) when start == finish, do: ops
-  defp op_arc(ops, cx, cy, r, start, finish, h, k ) do
+  defp op_arc(ops, cx, cy, r, start, finish ) do
     [
       <<
         @op_arc :: unsigned-integer-size(32)-native,
@@ -932,15 +932,13 @@ defmodule Scenic.Driver.Mac.Compile do
         cy :: float-size(32)-native,
         r :: float-size(32)-native,
         start :: float-size(32)-native,
-        finish :: float-size(32)-native,
-        h :: float-size(32)-native,
-        k :: float-size(32)-native
+        finish :: float-size(32)-native
       >>
     | ops]
   end
 
   # defp op_sector(ops,_,_,_, start, finish, _,_) when start == finish, do: ops
-  defp op_sector(ops, cx, cy, r, start, finish, h, k ) do
+  defp op_sector(ops, cx, cy, r, start, finish ) do
     [
       <<
         @op_sector :: unsigned-integer-size(32)-native,
@@ -948,9 +946,7 @@ defmodule Scenic.Driver.Mac.Compile do
         cy :: float-size(32)-native,
         r :: float-size(32)-native,
         start :: float-size(32)-native,
-        finish :: float-size(32)-native,
-        h :: float-size(32)-native,
-        k :: float-size(32)-native
+        finish :: float-size(32)-native
       >>
     | ops]
   end

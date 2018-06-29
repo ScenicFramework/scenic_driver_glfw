@@ -224,8 +224,6 @@ typedef struct __attribute__((__packed__))
   GLfloat     radius;
   GLfloat     start;
   GLfloat     finish;
-  GLfloat     h;
-  GLfloat     k;
 } arc_sector_t;
 
 typedef struct __attribute__((__packed__)) 
@@ -581,8 +579,8 @@ void* arc( NVGcontext* p_ctx, void* p_script ) {
     // Arc starts on the perimeter. Sector starts in the center.
     for (int i = 0; i <= segment_count; ++i) {
       float px, py;
-      px = sector.cx + sector.h * sector.radius * cos(a);
-      py = sector.cy + sector.k * sector.radius * sin(a);
+      px = sector.cx + sector.radius * cos(a);
+      py = sector.cy + sector.radius * sin(a);
       if (i == 0 ) {
         nvgMoveTo(p_ctx, px, py);
       } else {
@@ -619,8 +617,8 @@ void* sector( NVGcontext* p_ctx, void* p_script ) {
 
     for (int i = 0; i <= segment_count; ++i) {
       float px, py;
-      px = sector.cx + sector.h * sector.radius * cos(a);
-      py = sector.cy + sector.k * sector.radius * sin(a);
+      px = sector.cx + sector.radius * cos(a);
+      py = sector.cy + sector.radius * sin(a);
       nvgLineTo(p_ctx, px, py);
       a += increment ;
     }
