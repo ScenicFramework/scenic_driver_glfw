@@ -188,39 +188,39 @@ defmodule Scenic.Driver.Mac.Compile do
   end
 
   defp do_compile_primitive( ops,
-    %{data: {Primitive.Rectangle, {{x0, y0}, width, height}}}, _, _
+    %{data: {Primitive.Rectangle, {width, height}}}, _, _
   ) do
-    op_rect(ops, x0, y0, width, height)
+    op_rect(ops, width, height)
   end
 
   defp do_compile_primitive( ops,
-    %{data: {Primitive.RoundedRectangle, {{x, y}, width, height, radius}}}, _, _
+    %{data: {Primitive.RoundedRectangle, {width, height, radius}}}, _, _
   ) do
-    op_round_rect( ops, x, y, width, height, radius )
+    op_round_rect( ops, width, height, radius )
   end
 
   defp do_compile_primitive( ops,
-    %{data: {Primitive.Circle, {{x, y}, radius}}}, _, _
+    %{data: {Primitive.Circle, radius}}, _, _
   ) do
-    op_circle( ops, x, y, radius )
+    op_circle( ops, radius )
   end
 
   defp do_compile_primitive( ops,
-    %{data: {Primitive.Ellipse, {{x, y}, r1, r2}}}, _, _
+    %{data: {Primitive.Ellipse, {r1, r2}}}, _, _
   ) do
-    op_ellipse( ops, x, y, r1, r2 )
+    op_ellipse( ops, r1, r2 )
   end
 
   defp do_compile_primitive( ops,
-    %{data: {Primitive.Arc, {{x, y}, radius, start, finish}} }, _, _
+    %{data: {Primitive.Arc, {radius, start, finish}} }, _, _
   ) do
-    op_arc( ops, x, y, radius, start, finish )
+    op_arc( ops, radius, start, finish )
   end
 
   defp do_compile_primitive( ops,
-    %{data: {Primitive.Sector, {{x, y}, radius, start, finish}} }, _, _
+    %{data: {Primitive.Sector, {radius, start, finish}} }, _, _
   ) do
-    op_sector( ops, x, y, radius, start, finish )
+    op_sector( ops, radius, start, finish )
   end
 
   defp do_compile_primitive( ops,
@@ -248,10 +248,10 @@ defmodule Scenic.Driver.Mac.Compile do
   end
 
   defp do_compile_primitive( ops,
-    %{data: {Primitive.Text, {{x, y}, text}}}, _, _
+    %{data: {Primitive.Text, text}}, _, _
   ) do
     ops
-    |> op_text( x, y, text )
+    |> op_text( text )
   end
 
 
@@ -887,24 +887,20 @@ defmodule Scenic.Driver.Mac.Compile do
   end
 
 
-  defp op_rect(ops, x, y, w, h) do
+  defp op_rect(ops, w, h) do
     [
       <<
         @op_rect :: unsigned-integer-size(32)-native,
-        x :: float-size(32)-native,
-        y :: float-size(32)-native,
         w :: float-size(32)-native,
         h :: float-size(32)-native
       >>
     | ops]
   end
 
-  defp op_round_rect(ops, x, y, w, h, r) do
+  defp op_round_rect(ops, w, h, r) do
     [
       <<
         @op_round_rect :: unsigned-integer-size(32)-native,
-        x :: float-size(32)-native,
-        y :: float-size(32)-native,
         w :: float-size(32)-native,
         h :: float-size(32)-native,
         r :: float-size(32)-native
@@ -912,24 +908,20 @@ defmodule Scenic.Driver.Mac.Compile do
     | ops]
   end
 
-  defp op_circle(ops, cx, cy, r) do
+  defp op_circle(ops, r) do
     [
       <<
         @op_circle :: unsigned-integer-size(32)-native,
-        cx :: float-size(32)-native,
-        cy :: float-size(32)-native,
         r :: float-size(32)-native
       >>
     | ops]
   end
 
   # defp op_arc(ops,_,_,_, start, finish, _,_) when start == finish, do: ops
-  defp op_arc(ops, cx, cy, r, start, finish ) do
+  defp op_arc(ops, r, start, finish ) do
     [
       <<
         @op_arc :: unsigned-integer-size(32)-native,
-        cx :: float-size(32)-native,
-        cy :: float-size(32)-native,
         r :: float-size(32)-native,
         start :: float-size(32)-native,
         finish :: float-size(32)-native
@@ -938,12 +930,10 @@ defmodule Scenic.Driver.Mac.Compile do
   end
 
   # defp op_sector(ops,_,_,_, start, finish, _,_) when start == finish, do: ops
-  defp op_sector(ops, cx, cy, r, start, finish ) do
+  defp op_sector(ops, r, start, finish ) do
     [
       <<
         @op_sector :: unsigned-integer-size(32)-native,
-        cx :: float-size(32)-native,
-        cy :: float-size(32)-native,
         r :: float-size(32)-native,
         start :: float-size(32)-native,
         finish :: float-size(32)-native
@@ -952,19 +942,17 @@ defmodule Scenic.Driver.Mac.Compile do
   end
 
 
-  defp op_ellipse(ops, cx, cy, rx, ry) do
+  defp op_ellipse(ops, rx, ry) do
     [
       <<
         @op_ellipse :: unsigned-integer-size(32)-native,
-        cx :: float-size(32)-native,
-        cy :: float-size(32)-native,
         rx :: float-size(32)-native,
         ry :: float-size(32)-native
       >>
     | ops]
   end
 
-  defp op_text(ops, x, y, text) do
+  defp op_text(ops, text) do
     text_size = byte_size(text) + 1
 
     # keep everything aligned on 4 byte boundaries
@@ -978,8 +966,6 @@ defmodule Scenic.Driver.Mac.Compile do
     [
       <<
         @op_text :: unsigned-integer-size(32)-native,
-        x :: float-size(32)-native,
-        y :: float-size(32)-native,
         text_size :: unsigned-integer-size(32)-native,
         text :: binary,
         0 :: size(8), # null terminate the string so it can be used directly

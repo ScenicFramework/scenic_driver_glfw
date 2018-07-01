@@ -48,9 +48,18 @@ void errorcb(int error, const char* desc)
   send_puts(buff);
 }
 
+void render_frame() {
+
+}
+
 //---------------------------------------------------------
 void reshape_framebuffer(GLFWwindow* window, int w, int h) {
   window_data_t*  p_data = glfwGetWindowUserPointer( window );
+
+ // char buff[200];
+ // sprintf(buff, "reshape_framebuffer, w: %d, h: %d", w, h);
+ // send_puts(buff);
+
 
   // calculate the framebuffer to window size ratios
   // this will be used for things like oversampling fonts
@@ -88,6 +97,8 @@ void reshape_framebuffer(GLFWwindow* window, int w, int h) {
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
+    p_data->redraw = true;
+
   //   pthread_rwlock_unlock(&p_data->context.gl_lock);
   // }
 }
@@ -96,9 +107,9 @@ void reshape_framebuffer(GLFWwindow* window, int w, int h) {
 void reshape_window( GLFWwindow* window, int w, int h) {
   window_data_t*  p_data = glfwGetWindowUserPointer( window );
 
-//  char buff[200];
-//  sprintf(buff, "reshape_window, w: %d, h: %d", w, h);
-//  send_puts("reshape_window");
+ // char buff[200];
+ // sprintf(buff, "reshape_window, w: %d, h: %d", w, h);
+ // send_puts(buff);
 
   // calculate the framebuffer to window size ratios
   // this will be used for things like oversampling fonts
@@ -106,8 +117,8 @@ void reshape_window( GLFWwindow* window, int w, int h) {
   p_data->context.window_height = h;
 
   // if ( pthread_rwlock_rdlock(&p_data->context.gl_lock) == 0 ) {
-    p_data->context.frame_ratio.x = p_data->context.frame_width / p_data->context.window_width;
-    p_data->context.frame_ratio.y = p_data->context.frame_height / p_data->context.window_height;
+  p_data->context.frame_ratio.x = p_data->context.frame_width / p_data->context.window_width;
+  p_data->context.frame_ratio.y = p_data->context.frame_height / p_data->context.window_height;
 
     // // Render the scene
     // glClear(GL_COLOR_BUFFER_BIT);
@@ -115,8 +126,29 @@ void reshape_window( GLFWwindow* window, int w, int h) {
     // // Swap front and back buffers
     // glfwSwapBuffers(window);
 
+    // // clear the buffer
+    // glClear(GL_COLOR_BUFFER_BIT);
+    // // render the scene
+    // nvgBeginFrame(
+    //   p_data->context.p_ctx,
+    //   p_data->context.frame_width,
+    //   p_data->context.frame_height,
+    //   1.0f
+    // );
+
+    // if ( p_data->root_script >= 0 ) {
+    //   run_script( p_data->root_script, p_data );
+    // }
+    // nvgEndFrame(p_data->context.p_ctx);
+    // // Swap front and back buffers
+    // glfwSwapBuffers(window);
+
+
   //   pthread_rwlock_unlock(&p_data->context.gl_lock);
   // };
+
+  p_data->redraw = true;
+
   glfwPostEmptyEvent();
 }
 
@@ -214,6 +246,7 @@ void set_window_hints( const char* resizable ) {
   // we want OpenGL 2.1
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+
 
   // turn on anti-aliasing
   // glfwWindowHint(GLFW_SAMPLES, 4);
@@ -384,6 +417,9 @@ void setup_window( GLFWwindow* window, int width, int height, int num_scripts ) 
   memset(p_data->p_scripts, 0, sizeof(void*) * num_scripts );
   p_data->num_scripts = num_scripts;
 
+  // set the initial clear color
+  glClearColor(0.0, 0.0, 0.0, 1.0);
+
   // signal the app that the window is ready
   send_ready( 0 );
 }
@@ -477,7 +513,8 @@ int main(int argc, char **argv) {
   while ( p_data->keep_going && !isCallerDown() ) {
 
     // // check for incoming messages - blocks with a timeout
-    if ( handle_stdio_in(window) ) {
+    if ( p_data->redraw || handle_stdio_in(window) ) {
+      p_data->redraw = false;
 
       // sprintf(buff, "---------- Start frame root: %d", p_data->root_script);
       // send_puts(buff);
@@ -485,7 +522,12 @@ int main(int argc, char **argv) {
       // clear the buffer
       glClear(GL_COLOR_BUFFER_BIT);
       // render the scene
-      nvgBeginFrame(p_data->context.p_ctx, width, height, 1.0f);
+      nvgBeginFrame(
+        p_data->context.p_ctx,
+        p_data->context.window_width,
+        p_data->context.window_height,
+        1.0f
+      );
       if ( p_data->root_script >= 0 ) {
         run_script( p_data->root_script, p_data );
       }

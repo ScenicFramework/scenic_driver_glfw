@@ -484,7 +484,8 @@ void receive_query_stats( GLFWwindow* window ) {
   msg.focused   = glfwGetWindowAttrib(window, GLFW_FOCUSED);
   msg.resizable = glfwGetWindowAttrib(window, GLFW_RESIZABLE);
   msg.iconified = glfwGetWindowAttrib(window, GLFW_ICONIFIED);
-  msg.maximized = glfwGetWindowAttrib(window, GLFW_MAXIMIZED);
+  // msg.maximized = glfwGetWindowAttrib(window, GLFW_MAXIMIZED);
+  msg.maximized = false;
   msg.visible   = glfwGetWindowAttrib(window, GLFW_VISIBLE);
 
   write_cmd( (byte*)&msg, sizeof(msg_stats_t) );
@@ -744,9 +745,9 @@ bool dispatch_message( int msg_length, GLFWwindow* window ) {
     case CMD_QUERY_STATS:     receive_query_stats( window );                  break;
     case CMD_RESHAPE:         receive_reshape( &msg_length, window );         break;
     case CMD_POSITION:        receive_position( &msg_length, window );        break;
-    case CMD_FOCUS:           glfwFocusWindow( window );                      break;
+    // case CMD_FOCUS:           glfwFocusWindow( window );                      break;
     case CMD_ICONIFY:         glfwIconifyWindow( window );                    break;
-    case CMD_MAXIMIZE:        glfwMaximizeWindow( window );                   break;
+    // case CMD_MAXIMIZE:        glfwMaximizeWindow( window );                   break;
     case CMD_RESTORE:         glfwRestoreWindow( window );                    break;
     case CMD_SHOW:            glfwShowWindow( window );                       break;
     case CMD_HIDE:            glfwHideWindow( window );                       break;

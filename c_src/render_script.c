@@ -158,12 +158,16 @@ typedef struct __attribute__((__packed__))
 
 typedef struct __attribute__((__packed__)) 
 {
-  GLfloat     x;
-  GLfloat     y;
+  GLfloat     w;
+  GLfloat     h;
+} wh_t;
+
+typedef struct __attribute__((__packed__)) 
+{
   GLfloat     w;
   GLfloat     h;
   GLfloat     r;
-} xywhr_t;
+} whr_t;
 
 typedef struct __attribute__((__packed__)) 
 {
@@ -204,23 +208,17 @@ typedef struct __attribute__((__packed__))
 
 typedef struct __attribute__((__packed__)) 
 {
-  GLfloat     cx;
-  GLfloat     cy;
   GLfloat     rx;
   GLfloat     ry;
 } ellipse_t;
 
 typedef struct __attribute__((__packed__)) 
 {
-  GLfloat     cx;
-  GLfloat     cy;
   GLfloat     r;
 } circle_t;
 
 typedef struct __attribute__((__packed__)) 
 {
-  GLfloat     cx;
-  GLfloat     cy;
   GLfloat     radius;
   GLfloat     start;
   GLfloat     finish;
@@ -309,8 +307,6 @@ typedef struct __attribute__((__packed__))
 
 typedef struct __attribute__((__packed__)) 
 {
-  GLfloat     x;
-  GLfloat     y;
   GLuint      size;
 } text_t;
 
@@ -536,27 +532,27 @@ void* triangle( NVGcontext* p_ctx, void* p_script ) {
 }
 
 void* rect( NVGcontext* p_ctx, void* p_script ) {
-  xywh_t* xywh = (xywh_t*)p_script;
-  nvgRect(p_ctx, xywh->x, xywh->y, xywh->w, xywh->h);
-  return p_script + sizeof(xywh_t);
+  wh_t* wh = (wh_t*)p_script;
+  nvgRect(p_ctx, 0, 0, wh->w, wh->h);
+  return p_script + sizeof(wh_t);
 }
 
 void* round_rect( NVGcontext* p_ctx, void* p_script ) {
-  xywhr_t* xywhr = (xywhr_t*)p_script;
-  nvgRoundedRect(p_ctx, xywhr->x, xywhr->y, xywhr->w, xywhr->h, xywhr->r);
-  return p_script + sizeof(xywhr_t);
+  whr_t* whr = (whr_t*)p_script;
+  nvgRoundedRect(p_ctx, 0, 0, whr->w, whr->h, whr->r);
+  return p_script + sizeof(whr_t);
 }
 
 void* ellipse( NVGcontext* p_ctx, void* p_script ) {
   ellipse_t* ellipse = (ellipse_t*)p_script;
-  nvgEllipse(p_ctx, ellipse->cx, ellipse->cy, ellipse->rx, ellipse->ry);
+  nvgEllipse(p_ctx, 0, 0, ellipse->rx, ellipse->ry);
   return p_script + sizeof(ellipse_t);
 }
 
 void* circle( NVGcontext* p_ctx, void* p_script ) {
-  circle_t* circle = (circle_t*)p_script;
-  nvgCircle(p_ctx, circle->cx, circle->cy, circle->r);
-  return p_script + sizeof(circle_t);
+  GLfloat radius = *(GLfloat*)p_script;
+  nvgCircle(p_ctx, 0, 0, radius);
+  return p_script + sizeof(GLfloat);
 }
 
 void* arc( NVGcontext* p_ctx, void* p_script ) {
@@ -579,8 +575,8 @@ void* arc( NVGcontext* p_ctx, void* p_script ) {
     // Arc starts on the perimeter. Sector starts in the center.
     for (int i = 0; i <= segment_count; ++i) {
       float px, py;
-      px = sector.cx + sector.radius * cos(a);
-      py = sector.cy + sector.radius * sin(a);
+      px = sector.radius * cos(a);
+      py = sector.radius * sin(a);
       if (i == 0 ) {
         nvgMoveTo(p_ctx, px, py);
       } else {
@@ -613,12 +609,12 @@ void* sector( NVGcontext* p_ctx, void* p_script ) {
   // don't draw anything if the angle is so small that the segment_count is zero
   if ( segment_count > 0 ) {
     // Arc starts on the perimeter. Sector starts in the center.
-    nvgMoveTo(p_ctx, sector.cx, sector.cy);
+    nvgMoveTo(p_ctx, 0, 0);
 
     for (int i = 0; i <= segment_count; ++i) {
       float px, py;
-      px = sector.cx + sector.radius * cos(a);
-      py = sector.cy + sector.radius * sin(a);
+      px = sector.radius * cos(a);
+      py = sector.radius * sin(a);
       nvgLineTo(p_ctx, px, py);
       a += increment ;
     }
@@ -632,8 +628,8 @@ void* text( NVGcontext* p_ctx, void* p_script ) {
   text_t* text_info = (text_t*)p_script;
   p_script += sizeof(text_t);
 
-  float x = text_info->x;
-  float y = text_info->y;
+  float x = 0;
+  float y = 0;
   const char* start = p_script;
   const char* end = start + text_info->size;
   float lineh;

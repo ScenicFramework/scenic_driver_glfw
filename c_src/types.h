@@ -46,6 +46,7 @@ typedef struct {
 // the data pointed to by the window private data pointer
 typedef struct {
   bool              keep_going;
+  bool              redraw;
   uint32_t          input_flags;
   float             last_x;
   float             last_y;
