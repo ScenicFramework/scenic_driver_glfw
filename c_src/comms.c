@@ -53,9 +53,10 @@ The caller will typically be erlang, so use the 2-byte length indicator
 #define   CMD_RENDER_GRAPH          0x01
 #define   CMD_CLEAR_GRAPH           0x02
 #define   CMD_SET_ROOT              0x03
-
 // #define   CMD_CACHE_LOAD            0x03
 // #define   CMD_CACHE_RELEASE         0x04
+
+#define   CMD_CLEAR_COLOR           0x05
 
 #define   CMD_INPUT                 0x0A
 
@@ -665,8 +666,20 @@ void receive_set_root( int* p_msg_length, GLFWwindow* window ) {
   glfwPostEmptyEvent();
 }
 
-
-
+//---------------------------------------------------------
+typedef struct __attribute__((__packed__)) 
+{
+  GLuint r;
+  GLuint g;
+  GLuint b;
+  GLuint a;
+} clear_color_t;
+void receive_clear_color( int* p_msg_length, GLFWwindow* window ) {
+  // get the clear_color
+  clear_color_t cc;
+  read_bytes_down( &cc, sizeof(clear_color_t), p_msg_length);
+  glClearColor(cc.r/255.0, cc.g/255.0, cc.b/255.0, cc.a/255.0);
+}
 
 //---------------------------------------------------------
 typedef struct __attribute__((__packed__)) 
@@ -735,6 +748,8 @@ bool dispatch_message( int msg_length, GLFWwindow* window ) {
     case CMD_RENDER_GRAPH:    receive_render( &msg_length, window );          render = true; break;
     case CMD_CLEAR_GRAPH:     receive_clear( &msg_length, window );           render = true; break;    
     case CMD_SET_ROOT:        receive_set_root( &msg_length, window );        render = true; break;
+
+    case CMD_CLEAR_COLOR:     receive_clear_color( &msg_length, window );     render = true; break;
 /*
     case CMD_UPDATE_GRAPH:    receive_update_graph( &msg_length, window );    render = false; break;
     case CMD_CACHE_LOAD:      receive_cache_load( &msg_length, window );      render = false; break;

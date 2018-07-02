@@ -21,6 +21,8 @@ defmodule Scenic.Driver.Mac do
 
   @default_block_size       128
 
+  @default_clear_color      {0,0,0,0xFF}
+
   @default_sync             15
 
   #============================================================================
@@ -99,6 +101,7 @@ end
       last_used_dl:   nil,
       dl_map:         %{},
       used_dls:       %{},
+      clear_color:    @default_clear_color,
 
       textures:       %{},
       fonts:          %{},

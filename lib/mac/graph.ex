@@ -8,8 +8,9 @@
 #
 defmodule Scenic.Driver.Mac.Graph do
   alias Scenic.Driver.Mac
+  alias Scenic.Driver.Mac.Port
   alias Scenic.ViewPort
-#  alias Scenic.Primitive.SceneRef
+  alias Scenic.Primitive
   alias Scenic.Utilities
 
   require Logger
@@ -59,6 +60,11 @@ defmodule Scenic.Driver.Mac.Graph do
 
 
   #--------------------------------------------------------
+  def handle_cast( {:store_clear_color, clear_color}, %{port: _port} = state) do
+    {:noreply, %{state | clear_color: clear_color} }
+  end
+
+  #--------------------------------------------------------
   def handle_cast( {:request_input, _input_flags}, %{port: _port} = state) do
 #    send_input_flags( input_flags, port )
     {:noreply, state}
@@ -66,9 +72,24 @@ defmodule Scenic.Driver.Mac.Graph do
 
   #--------------------------------------------------------
   def handle_cast( {:set_root, graph_key}, %{
-    ready: true
+    ready: true,
+    port: port
   } = state ) do
     # Logger.warn "Mac set_root #{inspect(graph_key)}"
+
+    # prepare the clear color
+    state = with {:ok, graph} <- ViewPort.Tables.get_graph( graph_key ) do
+      clear_color = graph[0]
+      |> Map.get(:styles, %{})
+      |> Map.get(:clear_color, :black)
+      |> Primitive.Style.ClearColor.normalize()
+      Port.clear_color(port, clear_color)
+      %{state | clear_color: clear_color}
+    else
+      _ -> state
+    end
+
+    state = Map.put(state, :root_ref, graph_key)
 
     # build a list of keys to render
     keys = recursive_graph_keys( graph_key )
@@ -78,7 +99,8 @@ defmodule Scenic.Driver.Mac.Graph do
     # render immediatly - sets graph_key as the root
     state = render_graphs( keys, state, graph_key )
 
-    {:noreply, %{state | root_ref: graph_key}}
+    # {:noreply, %{state | root_ref: graph_key}}
+    {:noreply, state}
   end
 
   #--------------------------------------------------------
@@ -117,7 +139,7 @@ defmodule Scenic.Driver.Mac.Graph do
         state
       dl_id ->
         # clear the dl
-        Mac.Port.clear_dl(port, dl_id)
+        Port.clear_dl(port, dl_id)
         # free the dl to go back into the pool
         state
         |> Utilities.Map.delete_in( [:dl_map, graph_key] )
@@ -189,7 +211,7 @@ defmodule Scenic.Driver.Mac.Graph do
     end
     Task.start_link fn ->
       Enum.each( keys, &render_one_graph(driver, &1, state) )
-      if root_id, do: Mac.Port.set_root_dl(port, root_id)
+      if root_id, do: Port.set_root_dl(port, root_id)
     end
 
 # IO.puts "RENDER #{inspect(ids, charlists: :as_lists)}"
@@ -216,9 +238,6 @@ defmodule Scenic.Driver.Mac.Graph do
     case get_dl_id( graph_key, state ) do
       nil ->
         # this graph is not registered. make it so.
-        # {:ok, dl_id} = Mac.Port.new_dl_id(port)
-        # state = put_in( state, [:dl_map, graph_key], dl_id)
-        # render_graphs([graph_key], state)
         {:ok, dl_id} = find_open_dl_id( state )
         subscribe_to_graph( self(), graph_key )
         state = state
@@ -267,10 +286,30 @@ defmodule Scenic.Driver.Mac.Graph do
   #--------------------------------------------------------
   # render_one_graph renders one graph out to the C port.
   # It uses data in state but doesn't transform it
-  defp render_one_graph( driver, graph_key, %{port: port, dl_map: dl_map} = state ) do
+  defp render_one_graph( driver, graph_key, %{
+    port: port,
+    dl_map: dl_map,
+    root_ref: root_ref,
+    clear_color: old_clear_color
+  } = state ) do
     dl_id = dl_map[graph_key]
 
     with {:ok, graph} <- ViewPort.Tables.get_graph( graph_key ) do
+
+      # if this is the root, check if it has a clear_color set on it.
+      if graph_key == root_ref do
+        clear_color = graph[0]
+        |> Map.get(:styles, %{})
+        |> Map.get(:clear_color, :black)
+        |> Primitive.Style.ClearColor.normalize()
+
+        # don't bother sending it if it hasn't changed
+        if clear_color != old_clear_color do
+          Port.clear_color(port, clear_color)
+          GenServer.cast(self(), {:store_clear_color, clear_color})
+        end
+      end
+
       # hack the driver into the state map
       state = Map.put(state, :driver, driver)
       [
@@ -280,7 +319,7 @@ defmodule Scenic.Driver.Mac.Graph do
         >>,
         Mac.Compile.graph( graph, graph_key, state )
       ]
-      |> Mac.Port.send( port )
+      |> Port.send( port )
     else
       _ ->
         # the C driver didn't get called.

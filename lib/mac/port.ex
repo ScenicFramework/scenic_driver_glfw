@@ -22,6 +22,8 @@ defmodule Scenic.Driver.Mac.Port do
 
   @cmd_clear_dl             0x02
   @cmd_set_root_dl          0x03
+  @cmd_clear_color          0x05
+
   # @cmd_new_dl_id            0x30
   # @cmd_free_dl_id           0x31
   # @cmd_new_tx_id            0x32
@@ -99,6 +101,18 @@ defmodule Scenic.Driver.Mac.Port do
       <<
         @cmd_set_root_dl :: unsigned-integer-size(32)-native,
         root_dl :: integer-size(32)-native
+      >>
+    )
+  end
+
+  def clear_color(port, {r,g,b,a}) do
+    Port.command(port,
+      <<
+        @cmd_clear_color :: unsigned-integer-size(32)-native,
+        r :: unsigned-integer-size(32)-native,
+        g :: unsigned-integer-size(32)-native,
+        b :: unsigned-integer-size(32)-native,
+        a :: unsigned-integer-size(32)-native
       >>
     )
   end
