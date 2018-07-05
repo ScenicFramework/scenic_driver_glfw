@@ -46,7 +46,7 @@ defmodule Scenic.Driver.Mac.Port do
 #define   CMD_PUT_TX_FILE           0x35
 #define   CMD_PUT_TX_RAW            0x36
 
-  import IEx
+  # import IEx
 
 
   #============================================================================
