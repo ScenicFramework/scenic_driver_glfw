@@ -4,11 +4,11 @@
 #
 # a collection of functions for handling messages from the port
 #
-defmodule Scenic.Driver.Mac.Input do
+defmodule Scenic.Driver.Glfw.Input do
   use Bitwise
 
-  alias Scenic.Driver.Mac.Cache
-  alias Scenic.Driver.Mac.Font
+  alias Scenic.Driver.Glfw.Cache
+  alias Scenic.Driver.Glfw.Font
   alias Scenic.ViewPort
   alias Scenic.Utilities
 
@@ -100,7 +100,7 @@ defmodule Scenic.Driver.Mac.Input do
     |> Map.put( :end_dl, start_dl + dl_block_size - 1 )
     |> Map.put( :last_used_dl, start_dl )
     
-    # |> Mac.Font.initialize()
+    # |> Glfw.Font.initialize()
 
     GenServer.cast(viewport, {:driver_ready, self()})
 
@@ -303,7 +303,7 @@ defmodule Scenic.Driver.Mac.Input do
 
 
   #============================================================================
-  # utilities to translate Mac input to standardized input
+  # utilities to translate Glfw input to standardized input
 
 
 
@@ -313,8 +313,8 @@ defmodule Scenic.Driver.Mac.Input do
   # these are for reading the keyboard directly. If you are trying to do text input
   # use the text/char helpers instead
 
-  # key codes use the standards defined by Mac
-  # http://www.Mac.org/docs/latest/group__keys.html
+  # key codes use the standards defined by Glfw
+  # http://www.Glfw.org/docs/latest/group__keys.html
 
   #--------------------------------------------------------
   defp key_to_name( key_code )
@@ -405,13 +405,13 @@ defmodule Scenic.Driver.Mac.Input do
   defp key_to_name( 348 ),   do: "menu"
 
   defp key_to_name( key ) do
-    raise "Driver.Mac recieved unknown input key value: #{inspect(key)}"
+    raise "Driver.Glfw recieved unknown input key value: #{inspect(key)}"
   end
 
 
   #--------------------------------------------------------
-  # defined to follow the Mac modifier keys
-  # http://www.Mac.org/docs/latest/group__mods.html
+  # defined to follow the Glfw modifier keys
+  # http://www.Glfw.org/docs/latest/group__mods.html
 
 #  @key_mod_shift    0x0001
 #  @key_mod_control  0x0002
@@ -434,7 +434,7 @@ defmodule Scenic.Driver.Mac.Input do
 #    end)
 #  end
 #  defp mods_to_atoms( mods ) do
-#    raise "Driver.Mac recieved unknown mods: #{inspect(mods)}"
+#    raise "Driver.Glfw recieved unknown mods: #{inspect(mods)}"
 #  end
 
   #--------------------------------------------------------

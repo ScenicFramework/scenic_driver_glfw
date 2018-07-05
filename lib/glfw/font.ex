@@ -3,8 +3,8 @@
 #  Copyright © 2018 Kry10 Industries. All rights reserved.
 #
 
-defmodule Scenic.Driver.Mac.Font do
-  alias Scenic.Driver.Mac
+defmodule Scenic.Driver.Glfw.Font do
+  alias Scenic.Driver.Glfw
   alias Scenic.Cache
   require Logger
 
@@ -37,7 +37,7 @@ defmodule Scenic.Driver.Mac.Font do
 
   #--------------------------------------------------------
   defp load_system_font( name, port ) do
-    path = :code.priv_dir(:scenic_driver_mac)
+    path = :code.priv_dir(:scenic_driver_glfw)
     |> Path.join( @system_fonts[name] )
 
     # should probably confirm a hash or something here
@@ -51,7 +51,7 @@ defmodule Scenic.Driver.Mac.Font do
       path :: binary,
       0 :: size(8)      # null terminate so it can be used directly
     >>
-    |> Mac.Port.send( port )
+    |> Glfw.Port.send( port )
   end
 
   #--------------------------------------------------------
@@ -67,7 +67,7 @@ defmodule Scenic.Driver.Mac.Font do
         font_key,
         font_blob
       ]
-      |> Mac.Port.send( port )
+      |> Glfw.Port.send( port )
     else
       _ ->
         Logger.error(
@@ -88,7 +88,7 @@ defmodule Scenic.Driver.Mac.Font do
       >>,
       name
     ]
-    |> Mac.Port.send( port )
+    |> Glfw.Port.send( port )
   end
 
 end

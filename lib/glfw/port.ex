@@ -4,8 +4,8 @@
 #
 # a collection of functions for handling port specific messages
 #
-defmodule Scenic.Driver.Mac.Port do
-#  alias Scenic.Driver.Mac
+defmodule Scenic.Driver.Glfw.Port do
+#  alias Scenic.Driver.Glfw
 
   @msg_stats_id             0x01
 

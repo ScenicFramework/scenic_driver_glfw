@@ -2,21 +2,21 @@
 #  Created by Boyd Multerer on 05/31/18.
 #  Copyright © 2018 Kry10 Industries. All rights reserved.
 #
-#  sends data to a Mac port app
+#  sends data to a Glfw port app
 #
-defmodule Scenic.Driver.Mac do
+defmodule Scenic.Driver.Glfw do
   use Scenic.ViewPort.Driver
   alias Scenic.Cache
 
-  alias Scenic.Driver.Mac
+  alias Scenic.Driver.Glfw
 
   require Logger
 
-  @port  '/' ++ to_charlist(Mix.env()) ++ '/scenic_driver_mac'
+  @port  '/' ++ to_charlist(Mix.env()) ++ '/scenic_driver_glfw'
 
   @default_width            600
   @default_height           700
-  @default_title            "Driver Mac"
+  @default_title            "Driver Glfw"
   @default_resizeable       true
 
   @default_block_size       128
@@ -84,7 +84,7 @@ end
     Cache.request_notification( :cache_delete )
     # open and initialize the window
     Process.flag(:trap_exit, true)
-    executable = :code.priv_dir(:scenic_driver_mac) ++ @port ++ port_args
+    executable = :code.priv_dir(:scenic_driver_glfw) ++ @port ++ port_args
     port = Port.open({:spawn, executable}, [:binary, {:packet, 4}])
 
     state = %{
@@ -131,16 +131,16 @@ end
 
   #--------------------------------------------------------
   def handle_call( msg, from, state ) do
-    Mac.Port.handle_call(msg, from, state )
+    Glfw.Port.handle_call(msg, from, state )
   end
 
   #--------------------------------------------------------
   def handle_cast( msg,  state ) do #%{ready: true} =
     msg
-    |> do_handle( &Mac.Graph.handle_cast( &1, state ) )
-    |> do_handle( &Mac.Cache.handle_cast( &1, state ) )
-    |> do_handle( &Mac.Port.handle_cast( &1, state ) )
-    # |> do_handle( &Mac.Font.handle_cast( &1, state ) )
+    |> do_handle( &Glfw.Graph.handle_cast( &1, state ) )
+    |> do_handle( &Glfw.Cache.handle_cast( &1, state ) )
+    |> do_handle( &Glfw.Port.handle_cast( &1, state ) )
+    # |> do_handle( &Glfw.Font.handle_cast( &1, state ) )
     |> case do
       {:noreply, state} ->
         {:noreply, state}
@@ -159,18 +159,18 @@ end
 
   #--------------------------------------------------------
   def handle_info( :flush_dirty, %{ready: true} = state ) do
-    Mac.Graph.handle_flush_dirty( state )
+    Glfw.Graph.handle_flush_dirty( state )
   end
 
   #--------------------------------------------------------
   def handle_info( {:debounce, type}, %{ready: true} = state ) do
-    Mac.Input.handle_debounce( type, state )
+    Glfw.Input.handle_debounce( type, state )
   end
 
   #--------------------------------------------------------
   def handle_info( {msg_port, {:data, msg }}, %{port: port} = state ) when msg_port == port do
     msg
-    |> do_handle( &Mac.Input.handle_port_message(&1, state) )
+    |> do_handle( &Glfw.Input.handle_port_message(&1, state) )
   end
 
   # deal with the app exiting normally

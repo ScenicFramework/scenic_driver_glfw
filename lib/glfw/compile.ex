@@ -8,7 +8,7 @@
 #
 
 
-defmodule Scenic.Driver.Mac.Compile do
+defmodule Scenic.Driver.Glfw.Compile do
   alias Scenic.Primitive
 
   require Logger

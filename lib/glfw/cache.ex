@@ -3,11 +3,11 @@
 #  Copyright © 2018 Kry10 Industries. All rights reserved.
 #
 # a collection of functions for maintaining and drawing graphs. These could have
-# just as well been in Scenic.Driver.Mac itself, but that was getting too long
+# just as well been in Scenic.Driver.Glfw itself, but that was getting too long
 # and complicated
 #
-defmodule Scenic.Driver.Mac.Cache do
-  alias Scenic.Driver.Mac
+defmodule Scenic.Driver.Glfw.Cache do
+  alias Scenic.Driver.Glfw
   alias Scenic.Cache
 
   # @msg_new_tx_id            0x31
@@ -34,7 +34,7 @@ defmodule Scenic.Driver.Mac.Cache do
       key :: binary,
       0 :: size(8)
     >>
-    |> Mac.Port.send( port )
+    |> Glfw.Port.send( port )
     {:noreply, state}
   end
 
@@ -67,7 +67,7 @@ defmodule Scenic.Driver.Mac.Cache do
       byte_size(pixels) :: unsigned-integer-size(32)-native,
       pixels :: binary
     >>
-    |> Mac.Port.send( port )
+    |> Glfw.Port.send( port )
   end
 
   #--------------------------------------------------------
@@ -80,7 +80,7 @@ defmodule Scenic.Driver.Mac.Cache do
       0 :: size(8),
       data :: binary
     >>
-    |> Mac.Port.send( port )
+    |> Glfw.Port.send( port )
   end
 
 end

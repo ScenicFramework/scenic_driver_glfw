@@ -3,12 +3,12 @@
 #  Copyright © 2018 Kry10 Industries. All rights reserved.
 #
 # a collection of functions for maintaining and drawing graphs. These could have
-# just as well been in Scenic.Driver.Mac itself, but that was getting too long
+# just as well been in Scenic.Driver.Glfw itself, but that was getting too long
 # and complicated
 #
-defmodule Scenic.Driver.Mac.Graph do
-  alias Scenic.Driver.Mac
-  alias Scenic.Driver.Mac.Port
+defmodule Scenic.Driver.Glfw.Graph do
+  alias Scenic.Driver.Glfw
+  alias Scenic.Driver.Glfw.Port
   alias Scenic.ViewPort
   alias Scenic.Primitive
   alias Scenic.Utilities
@@ -75,7 +75,7 @@ defmodule Scenic.Driver.Mac.Graph do
     ready: true,
     port: port
   } = state ) do
-    # Logger.warn "Mac set_root #{inspect(graph_key)}"
+    # Logger.warn "Glfw set_root #{inspect(graph_key)}"
 
     # prepare the clear color
     state = with {:ok, graph} <- ViewPort.Tables.get_graph( graph_key ) do
@@ -317,7 +317,7 @@ defmodule Scenic.Driver.Mac.Graph do
           @cmd_render_graph :: unsigned-integer-size(32)-native,
           dl_id :: unsigned-integer-size(32)-native
         >>,
-        Mac.Compile.graph( graph, graph_key, state )
+        Glfw.Compile.graph( graph, graph_key, state )
       ]
       |> Port.send( port )
     else
