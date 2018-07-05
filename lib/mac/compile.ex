@@ -318,12 +318,10 @@ defmodule Scenic.Driver.Mac.Compile do
   defp do_compile_style(ops, :text_align, align),   do: op_text_align(ops, align)
   defp do_compile_style(ops, :text_height, height), do: op_text_height(ops, height)
 
-  defp do_compile_style(ops, :scissor, {{x,y}, w, h}) do
+  defp do_compile_style(ops, :scissor, {w, h}) do
     [
       <<
         @op_intersect_scissor :: unsigned-integer-size(32)-native,
-        x :: float-size(32)-native,
-        y :: float-size(32)-native,
         w :: float-size(32)-native,
         h :: float-size(32)-native,
       >>

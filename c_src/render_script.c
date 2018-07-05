@@ -469,15 +469,15 @@ void* global_alpha( NVGcontext* p_ctx, void* p_script ) {
 // scissors
 
 void* scissor( NVGcontext* p_ctx, void* p_script ) {
-  xywh_t* xywh = (xywh_t*)p_script;
-  nvgScissor(p_ctx, xywh->x, xywh->y, xywh->w, xywh->h);
-  return p_script + sizeof(xywh_t);
+  wh_t* wh = (wh_t*)p_script;
+  nvgScissor(p_ctx, 0, 0, wh->w, wh->h);
+  return p_script + sizeof(wh_t);
 }
 
 void* intersect_scissor( NVGcontext* p_ctx, void* p_script ) {
-  xywh_t* xywh = (xywh_t*)p_script;
-  nvgIntersectScissor(p_ctx, xywh->x, xywh->y, xywh->w, xywh->h);
-  return p_script + sizeof(xywh_t);
+  wh_t* wh = (wh_t*)p_script;
+  nvgIntersectScissor(p_ctx, 0, 0, wh->w, wh->h);
+  return p_script + sizeof(wh_t);
 }
 
 //---------------------------------------------------------

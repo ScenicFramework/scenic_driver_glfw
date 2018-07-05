@@ -674,7 +674,7 @@ typedef struct __attribute__((__packed__))
   GLuint b;
   GLuint a;
 } clear_color_t;
-void receive_clear_color( int* p_msg_length, GLFWwindow* window ) {
+void receive_clear_color( int* p_msg_length ) {
   // get the clear_color
   clear_color_t cc;
   read_bytes_down( &cc, sizeof(clear_color_t), p_msg_length);
@@ -749,7 +749,7 @@ bool dispatch_message( int msg_length, GLFWwindow* window ) {
     case CMD_CLEAR_GRAPH:     receive_clear( &msg_length, window );           render = true; break;    
     case CMD_SET_ROOT:        receive_set_root( &msg_length, window );        render = true; break;
 
-    case CMD_CLEAR_COLOR:     receive_clear_color( &msg_length, window );     render = true; break;
+    case CMD_CLEAR_COLOR:     receive_clear_color( &msg_length );             render = true; break;
 /*
     case CMD_UPDATE_GRAPH:    receive_update_graph( &msg_length, window );    render = false; break;
     case CMD_CACHE_LOAD:      receive_cache_load( &msg_length, window );      render = false; break;
