@@ -1,9 +1,9 @@
-defmodule ScenicDriverMac.MixProject do
+defmodule Scenic.Driver.Glfw.MixProject do
   use Mix.Project
 
   def project do
     [
-      app: :scenic_driver_mac,
+      app: :scenic_driver_glfw,
       version: "0.1.0",
       build_path: "_build",
       config_path: "config/config.exs",
