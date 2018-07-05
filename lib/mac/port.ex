@@ -161,7 +161,6 @@ defmodule Scenic.Driver.Mac.Port do
   @doc false
   def handle_call( :query_stats, _from, %{port: port} = state ) do
     Port.command(port, <<@cmd_query_stats :: unsigned-integer-size(32)-native>>)
-pry()
     reply = receive do
       {^port, {:data, <<@msg_stats_id :: size(8),
         input_flags :: unsigned-integer-native-size(32),
