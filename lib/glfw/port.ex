@@ -65,26 +65,6 @@ defmodule Scenic.Driver.Glfw.Port do
   #============================================================================
   # all internal functions.
 
-  # allocate a display list on the graphics card and pass it's id back up
-  @doc false
-  # def new_dl_id(port, timeout \\ 600) do
-  #   Port.command(port, <<@cmd_new_dl_id>>)
-  #   receive do
-  #     {^port, {:data, <<@msg_new_dl_id :: size(8),
-  #       dl_id :: unsigned-integer-size(32)-native,
-  #     >> }} ->
-  #       {:ok, dl_id}
-  #   after 
-  #     timeout -> {:err, :timeout}
-  #   end
-  # end
-
-  # # free a display list on the graphics card
-  # @doc false
-  # def free_dl_id( port, id ) do
-  #   Port.command(port, <<@cmd_free_dl_id, id :: unsigned-integer-size(32)-native>>)
-  # end
-
   @doc false
   def clear_dl(port, dl_id) do
     Port.command(port,

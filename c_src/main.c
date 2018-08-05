@@ -56,51 +56,16 @@ void render_frame() {
 void reshape_framebuffer(GLFWwindow* window, int w, int h) {
   window_data_t*  p_data = glfwGetWindowUserPointer( window );
 
- // char buff[200];
- // sprintf(buff, "reshape_framebuffer, w: %d, h: %d", w, h);
- // send_puts(buff);
-
-
-  // calculate the framebuffer to window size ratios
-  // this will be used for things like oversampling fonts
   p_data->context.frame_width = w;
   p_data->context.frame_height = h;
 
-  send_reshape(
-    p_data->context.window_width, p_data->context.window_height,
-    w, h
-  );
-
   // if ( pthread_rwlock_rdlock(&p_data->context.gl_lock) == 0 ) {
-    p_data->context.frame_ratio.x = p_data->context.frame_width / p_data->context.window_width;
-    p_data->context.frame_ratio.y = p_data->context.frame_height / p_data->context.window_height;
+  // record the framebuffer to window size ratios
+  // this will be used for things like oversampling fonts
+ //    p_data->context.frame_ratio.x = p_data->context.frame_width / p_data->context.window_width;
+ //    p_data->context.frame_ratio.y = p_data->context.frame_height / p_data->context.window_height;
 
-    // set the view port to the new size passed in
-    glViewport(0, 0, w, h);
-
-    // set the 2D Projection matrix
-    // Preserve Aspect Ratio
-    // This means changing this size will
-    // alter the position and size but NOT
-    // the actual look of the scene.
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    glOrtho( 0,
-      p_data->context.window_width,
-      p_data->context.window_height,
-      0, -1.0, 1.0
-    );
-
-    // set the modelView to Identity
-    // since our UI will already be in viewport space
-    // for now!
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-
-    p_data->redraw = true;
-
-  //   pthread_rwlock_unlock(&p_data->context.gl_lock);
-  // }
+    // p_data->redraw = true;
 }
 
 //---------------------------------------------------------
@@ -108,7 +73,10 @@ void reshape_window( GLFWwindow* window, int w, int h) {
   window_data_t*  p_data = glfwGetWindowUserPointer( window );
 
  // char buff[200];
- // sprintf(buff, "reshape_window, w: %d, h: %d", w, h);
+ // sprintf(buff, "reshape_window, ww: %d, wh: %d", w, h);
+ // send_puts(buff);
+ // sprintf(buff, "                fw: %d, fh: %d",
+ //  p_data->context.frame_width, p_data->context.frame_height);
  // send_puts(buff);
 
   // calculate the framebuffer to window size ratios
@@ -117,39 +85,25 @@ void reshape_window( GLFWwindow* window, int w, int h) {
   p_data->context.window_height = h;
 
   // if ( pthread_rwlock_rdlock(&p_data->context.gl_lock) == 0 ) {
-  p_data->context.frame_ratio.x = p_data->context.frame_width / p_data->context.window_width;
-  p_data->context.frame_ratio.y = p_data->context.frame_height / p_data->context.window_height;
+  p_data->context.frame_ratio.x = (float)p_data->context.frame_width / (float)p_data->context.window_width;
+  p_data->context.frame_ratio.y = (float)p_data->context.frame_height / (float)p_data->context.window_height;
 
-    // // Render the scene
-    // glClear(GL_COLOR_BUFFER_BIT);
-    // glCallList( p_data->context.root_dl );
-    // // Swap front and back buffers
-    // glfwSwapBuffers(window);
+  send_reshape(
+    p_data->context.window_width, p_data->context.window_height,
+    w, h
+  );
 
-    // // clear the buffer
-    // glClear(GL_COLOR_BUFFER_BIT);
-    // // render the scene
-    // nvgBeginFrame(
-    //   p_data->context.p_ctx,
-    //   p_data->context.frame_width,
-    //   p_data->context.frame_height,
-    //   1.0f
-    // );
-
-    // if ( p_data->root_script >= 0 ) {
-    //   run_script( p_data->root_script, p_data );
-    // }
-    // nvgEndFrame(p_data->context.p_ctx);
-    // // Swap front and back buffers
-    // glfwSwapBuffers(window);
+ // sprintf(buff, "                rw: %f, rh: %f",
+ //  p_data->context.frame_ratio.x, p_data->context.frame_ratio.y);
+ // send_puts(buff);
 
 
-  //   pthread_rwlock_unlock(&p_data->context.gl_lock);
-  // };
+ // char buff[200];
+ // sprintf(buff, "reshape_window, w: %d, h: %d, rx: %f, ry: %f",
+ //  w, h, p_data->context.frame_ratio.x, p_data->context.frame_ratio.y);
+ // send_puts(buff);
 
   p_data->redraw = true;
-
-  glfwPostEmptyEvent();
 }
 
 
@@ -381,6 +335,8 @@ void setup_window( GLFWwindow* window, int width, int height, int num_scripts ) 
 
   p_data->context.window_width = width;
   p_data->context.window_height = height;
+  p_data->context.frame_ratio.x = 1.0f;
+  p_data->context.frame_ratio.y = 1.0f;
 
   p_data->context.glew_ok = false;
 
@@ -394,6 +350,17 @@ void setup_window( GLFWwindow* window, int width, int height, int num_scripts ) 
 
   // initialize glew - do after setting up window and making current
   p_data->context.glew_ok = glewInit() == GLEW_OK;
+
+
+  // get the actual framebuffer size to set it up
+  int frame_width, frame_height;
+  glfwGetFramebufferSize( window, &frame_width, &frame_height );
+  reshape_framebuffer(window, frame_width, frame_height );
+
+  // get the actual window size to set it up
+  int window_width, window_height;
+  glfwGetWindowSize( window, &window_width, &window_height ); 
+  reshape_window(window, window_width, window_height);
 
   p_data->context.p_ctx = nvgCreateGL2(NVG_ANTIALIAS | NVG_STENCIL_STROKES | NVG_DEBUG);
   if (p_data->context.p_ctx == NULL) {
@@ -526,7 +493,7 @@ int main(int argc, char **argv) {
         p_data->context.p_ctx,
         p_data->context.window_width,
         p_data->context.window_height,
-        1.0f
+        p_data->context.frame_ratio.x
       );
       if ( p_data->root_script >= 0 ) {
         run_script( p_data->root_script, p_data );

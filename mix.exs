@@ -16,8 +16,8 @@ defmodule Scenic.Driver.Glfw.MixProject do
       compilers: [:elixir_make] ++ Mix.compilers,
       make_env: %{"MIX_ENV" => to_string(Mix.env)},
       make_clean: ["clean"],
-
-      deps: deps()
+      deps: deps(),
+      dialyzer: [plt_add_deps: :transitive]
     ]
   end
 
@@ -40,6 +40,7 @@ defmodule Scenic.Driver.Glfw.MixProject do
       { :scenic, git: "git@github.com:boydm/scenic.git" },
       # { :scenic_math, git: "git@github.com:boydm/scenic_math.git" },
       # { :scenic_truetype, git: "git@github.com:boydm/scenic_truetype.git" },
+      {:dialyxir, "~> 0.5", only: :dev, runtime: false}
     ]
   end
 end
