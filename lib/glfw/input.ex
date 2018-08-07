@@ -405,7 +405,8 @@ defmodule Scenic.Driver.Glfw.Input do
   defp key_to_name( 348 ),   do: "menu"
 
   defp key_to_name( key ) do
-    raise "Driver.Glfw recieved unknown input key value: #{inspect(key)}"
+    IO.puts "Driver.Glfw recieved unknown input key value: #{inspect(key)}"
+    "unknown"
   end
 
 
