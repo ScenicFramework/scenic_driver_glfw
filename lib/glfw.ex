@@ -17,7 +17,7 @@ defmodule Scenic.Driver.Glfw do
   @default_width            600
   @default_height           700
   @default_title            "Driver Glfw"
-  @default_resizeable       true
+  @default_resizeable       false
 
   @default_block_size       128
 
@@ -46,18 +46,7 @@ end
   #============================================================================
   # startup
 
-  def init( viewport, config ) do
-    # set up the port args - enforce type checking
-    width = cond do
-      is_integer(config[:w])      -> config[:w]
-      is_integer(config[:width])  -> config[:width]
-      true                        -> @default_width
-    end
-    height = cond do
-      is_integer(config[:h])      -> config[:h]
-      is_integer(config[:height]) -> config[:height]
-      true                        -> @default_height
-    end
+  def init( viewport, {width, height}, config ) do
     title = cond do
       is_bitstring(config[:t])    -> config[:t]
       is_bitstring(config[:title])-> config[:title]
@@ -112,8 +101,8 @@ end
       pending_flush:  false,
       currently_drawing: [],
 
-      window:         { @default_width, @default_height },
-      frame:          { @default_width, @default_height },
+      window:         { width, height },
+      frame:          { width, height },
       screen_factor:  1.0,
 
       viewport:       viewport

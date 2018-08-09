@@ -140,7 +140,7 @@ defmodule Scenic.Driver.Glfw.Input do
     |> Map.put( :frame, {frame_width, frame_height} )
     |> Map.put( :screen_factor, frame_width / window_width )
 
-    debounce_input({:reshape, {window_width, window_height}}, state)
+    debounce_input({:viewport_reshape, {window_width, window_height}}, state)
 
     { :noreply, state }
   end
