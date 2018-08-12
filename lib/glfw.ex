@@ -14,8 +14,6 @@ defmodule Scenic.Driver.Glfw do
 
   @port  '/' ++ to_charlist(Mix.env()) ++ '/scenic_driver_glfw'
 
-  @default_width            600
-  @default_height           700
   @default_title            "Driver Glfw"
   @default_resizeable       false
 

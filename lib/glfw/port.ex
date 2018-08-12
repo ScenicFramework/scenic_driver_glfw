@@ -66,7 +66,7 @@ defmodule Scenic.Driver.Glfw.Port do
   # all internal functions.
 
   # allocate a display list on the graphics card and pass it's id back up
-  @doc false
+  # @doc false
   # def new_dl_id(port, timeout \\ 600) do
   #   Port.command(port, <<@cmd_new_dl_id>>)
   #   receive do
