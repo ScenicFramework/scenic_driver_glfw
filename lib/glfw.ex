@@ -10,6 +10,8 @@ defmodule Scenic.Driver.Glfw do
 
   alias Scenic.Driver.Glfw
 
+  # import IEx
+
   require Logger
 
   @port  '/' ++ to_charlist(Mix.env()) ++ '/scenic_driver_glfw'
@@ -46,13 +48,11 @@ end
 
   def init( viewport, {width, height}, config ) do
     title = cond do
-      is_bitstring(config[:t])    -> config[:t]
       is_bitstring(config[:title])-> config[:title]
       true                        -> @default_title
     end
     resizeable = cond do
-      is_bitstring(config[:r])    -> config[:r]
-      is_bitstring(config[:resizeable])  -> config[:resizeable]
+      is_boolean(config[:resizeable])  -> config[:resizeable]
       true                        -> @default_resizeable
     end
     sync_interval = cond do
