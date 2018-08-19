@@ -14,6 +14,8 @@ defmodule Scenic.Driver.Glfw.Input do
 
   require Logger
 
+  # import IEx
+
   # incoming message ids
   @msg_close_id             0x00
 #  @msg_stats_id             0x01
@@ -148,8 +150,9 @@ defmodule Scenic.Driver.Glfw.Input do
   #--------------------------------------------------------
   def handle_port_message( <<
     @msg_close_id :: unsigned-integer-size(32)-native>>,
-  state ) do
-    GenServer.cast(self(), :close)
+    %{viewport: viewport} = state
+  ) do
+    GenServer.cast(viewport, :user_close)
     { :noreply, Map.put(state, :closing, true) }
   end
 

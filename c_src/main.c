@@ -194,6 +194,10 @@ void set_window_hints( const char* resizable ) {
     glfwWindowHint(GLFW_RESIZABLE, false);
   }
 
+  // GLFW_DECORATED flags all window decoration such as the close
+  // widget, border, move bar, etc
+  // glfwWindowHint(GLFW_DECORATED, false);
+
   // claim the focus right on creation
   glfwWindowHint(GLFW_FOCUSED, true);
 
@@ -439,8 +443,14 @@ int main(int argc, char **argv) {
     printf("\r\nscenic_driver_glfw should be launched via the Scenic.Driver.Glfw library.\r\n\r\n");
     return 0;
   }
+  // argv[1] is the width of the window
   int width  = atoi(argv[1]);
+  // argv[2] is the height of the window
   int height = atoi(argv[2]);
+
+
+  // argv[5] is the space to allocate for lists
+  // becoming obsolete
   int dl_block_size = atoi(argv[5]);
 
 
@@ -451,9 +461,11 @@ int main(int argc, char **argv) {
   glfwSetErrorCallback(errorcb);
 
   // set the glfw window hints - done before window creation
+  // argv[4] is the resizable flag
   set_window_hints( argv[4] );
 
   /* Create a windowed mode window and its OpenGL context */
+  // argv[3] is the window title
   window = glfwCreateWindow(width, height, argv[3], NULL, NULL);
   if (!window)
   {

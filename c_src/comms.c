@@ -417,8 +417,8 @@ void send_cursor_enter(int entered, float xpos, float ypos) {
 
 //---------------------------------------------------------
 void send_close() {
-  byte  msg = MSG_OUT_CLOSE;
-  write_cmd( &msg, sizeof(byte) );
+  uint32_t  msg = MSG_OUT_CLOSE;
+  write_cmd( (byte*)&msg, sizeof(uint32_t) );
 }
 
 //---------------------------------------------------------
