@@ -18,7 +18,7 @@ defmodule Scenic.Driver.Glfw.Graph do
   @cmd_render_graph         0x01
   @msg_draw_ready_id        0x07
 
-  # import IEx
+  import IEx
 
   #--------------------------------------------------------
   # render graphs in the dirty_graphs list. They were place there
@@ -60,8 +60,33 @@ defmodule Scenic.Driver.Glfw.Graph do
 
 
   #--------------------------------------------------------
-  def handle_cast( {:store_clear_color, clear_color}, %{port: _port} = state) do
-    {:noreply, %{state | clear_color: clear_color} }
+  def handle_cast( :update_clear_color,
+    %{port: port, root_ref: root_key, clear_color: old_clear_color} = state
+  ) do
+    state = with {:ok, graph} <- ViewPort.Tables.get_graph( root_key ) do
+      root_group = graph[0]
+      clear_color = ((root_group
+          |> Map.get(:styles, %{})
+          |> Map.get(:clear_color)) ||
+        ( root_group
+          |> Map.get(:styles, %{})
+          |> Map.get(:theme, %{})
+          |> Map.get(:background, :black)))
+      |> Primitive.Style.Paint.Color.normalize()
+
+      if clear_color != old_clear_color do
+        # the color has changed. deal with it
+        Port.clear_color(port, clear_color)
+        {:noreply, %{state | clear_color: clear_color}}
+      else
+        # hasn't changed. Don't do anything
+        {:noreply, state }
+      end
+    else
+      _ ->
+        # the graph isn't in the table. don't do anything
+        {:noreply, state }
+    end
   end
 
   #--------------------------------------------------------
@@ -77,17 +102,6 @@ defmodule Scenic.Driver.Glfw.Graph do
   } = state ) do
     # Logger.warn "Glfw set_root #{inspect(graph_key)}"
 
-    # prepare the clear color
-    state = with {:ok, graph} <- ViewPort.Tables.get_graph( graph_key ) do
-      clear_color = graph[0]
-      |> Map.get(:styles, %{})
-      |> Map.get(:clear_color, :black)
-      |> Primitive.Style.ClearColor.normalize()
-      Port.clear_color(port, clear_color)
-      %{state | clear_color: clear_color}
-    else
-      _ -> state
-    end
 
     state = Map.put(state, :root_ref, graph_key)
 
@@ -98,6 +112,9 @@ defmodule Scenic.Driver.Glfw.Graph do
 
     # render immediatly - sets graph_key as the root
     state = render_graphs( keys, state, graph_key )
+
+    # update the clear color
+    GenServer.cast(self(), :update_clear_color)
 
     # {:noreply, %{state | root_ref: graph_key}}
     {:noreply, state}
@@ -298,16 +315,7 @@ defmodule Scenic.Driver.Glfw.Graph do
 
       # if this is the root, check if it has a clear_color set on it.
       if graph_key == root_ref do
-        clear_color = graph[0]
-        |> Map.get(:styles, %{})
-        |> Map.get(:clear_color, :black)
-        |> Primitive.Style.ClearColor.normalize()
-
-        # don't bother sending it if it hasn't changed
-        if clear_color != old_clear_color do
-          Port.clear_color(port, clear_color)
-          GenServer.cast(self(), {:store_clear_color, clear_color})
-        end
+        GenServer.cast(driver, :update_clear_color)
       end
 
       # hack the driver into the state map
