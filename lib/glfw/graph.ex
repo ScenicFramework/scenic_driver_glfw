@@ -18,7 +18,7 @@ defmodule Scenic.Driver.Glfw.Graph do
   @cmd_render_graph         0x01
   @msg_draw_ready_id        0x07
 
-  import IEx
+  # import IEx
 
   #--------------------------------------------------------
   # render graphs in the dirty_graphs list. They were place there
@@ -63,7 +63,7 @@ defmodule Scenic.Driver.Glfw.Graph do
   def handle_cast( :update_clear_color,
     %{port: port, root_ref: root_key, clear_color: old_clear_color} = state
   ) do
-    state = with {:ok, graph} <- ViewPort.Tables.get_graph( root_key ) do
+    with {:ok, graph} <- ViewPort.Tables.get_graph( root_key ) do
       root_group = graph[0]
       clear_color = ((root_group
           |> Map.get(:styles, %{})
@@ -97,8 +97,7 @@ defmodule Scenic.Driver.Glfw.Graph do
 
   #--------------------------------------------------------
   def handle_cast( {:set_root, graph_key}, %{
-    ready: true,
-    port: port
+    ready: true
   } = state ) do
     # Logger.warn "Glfw set_root #{inspect(graph_key)}"
 
@@ -306,8 +305,7 @@ defmodule Scenic.Driver.Glfw.Graph do
   defp render_one_graph( driver, graph_key, %{
     port: port,
     dl_map: dl_map,
-    root_ref: root_ref,
-    clear_color: old_clear_color
+    root_ref: root_ref
   } = state ) do
     dl_id = dl_map[graph_key]
 
