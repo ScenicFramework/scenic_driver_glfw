@@ -30,7 +30,7 @@ defmodule Scenic.Driver.Glfw.Port do
   # @cmd_free_tx_id           0x33
   # @cmd_put_tx_id            0x34
 
-  @cmd_crash                0xFE
+  # @cmd_crash                0xFE
 
   @min_window_width         40     
   @min_window_height        20
@@ -228,12 +228,12 @@ defmodule Scenic.Driver.Glfw.Port do
     {:noreply, state}
   end
 
-if Mix.env() == :dev do
-  def handle_cast( :crash, %{port: port} = state) do
-    Port.command(port, <<@cmd_crash :: unsigned-integer-size(32)-native>>)
-    {:noreply, state}
-  end
-end
+# if Mix.env() == :dev do
+#   def handle_cast( :crash, %{port: port} = state) do
+#     Port.command(port, <<@cmd_crash :: unsigned-integer-size(32)-native>>)
+#     {:noreply, state}
+#   end
+# end
 
   def handle_cast( :close, %{port: port} = state) do
     Port.command(port, <<@cmd_close :: unsigned-integer-size(32)-native>>)
