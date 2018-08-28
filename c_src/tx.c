@@ -149,10 +149,6 @@ void receive_free_tx_id( int* p_msg_length, GLFWwindow* window ) {
   char* p_key = malloc(key_size);
   read_bytes_down( p_key, key_size, p_msg_length);
 
-char buff[200];
-sprintf(buff, "TX delete key: %s", p_key);
-send_puts(buff);
-
   int id = get_tx_id(p_data->p_tx_ids, p_key);
   if (id >= 0) {
     p_data->p_tx_ids = delete_tx_id(p_data->p_tx_ids, p_key);
