@@ -118,11 +118,13 @@ end
 
   #--------------------------------------------------------
   def handle_call( msg, from, state ) do
+IO.puts "call #{inspect(msg)}"
     Glfw.Port.handle_call(msg, from, state )
   end
 
   #--------------------------------------------------------
   def handle_cast( msg,  state ) do #%{ready: true} =
+# IO.puts "cast #{inspect(msg)}"
     msg
     |> do_handle( &Glfw.Graph.handle_cast( &1, state ) )
     |> do_handle( &Glfw.Cache.handle_cast( &1, state ) )
@@ -156,6 +158,7 @@ end
 
   #--------------------------------------------------------
   def handle_info( {msg_port, {:data, msg }}, %{port: port} = state ) when msg_port == port do
+IO.puts "port info #{inspect(msg)}"
     msg
     |> do_handle( &Glfw.Input.handle_port_message(&1, state) )
   end
