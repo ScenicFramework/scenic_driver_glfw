@@ -29,6 +29,7 @@ defmodule Scenic.Driver.Glfw.Graph do
     draw_busy: true,
     sync_interval: sync_interval
   } = state ) do
+IO.puts "flush BUSY"
     # already busy drawing. Try again later.
     # This is similar to skipping a frame
     Process.send_after(self(), :flush_dirty, sync_interval)
@@ -38,6 +39,7 @@ defmodule Scenic.Driver.Glfw.Graph do
   def handle_flush_dirty( %{
     dirty_graphs: dg
   } = state ) do
+IO.puts "flush"
 
     state = dg
     |> Enum.uniq()
@@ -125,6 +127,7 @@ defmodule Scenic.Driver.Glfw.Graph do
     pending_flush: false,
     sync_interval: sync_interval
   } = state ) do
+IO.puts "update_graph immediate"
     # render the graph immediately to reduce latencey
     state = render_graphs( graph_key, state )
 
@@ -139,6 +142,7 @@ defmodule Scenic.Driver.Glfw.Graph do
     pending_flush: true,
     dirty_graphs: dg
   } = state ) do
+IO.puts "update_graph delayed"
     # there is a pending :flush_dirty messsage
     # simply add the key to the dirty_graphs list
     {:noreply, %{state | dirty_graphs: [graph_key | dg]}}
