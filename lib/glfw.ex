@@ -76,7 +76,7 @@ end
 
     # start the flush timer
     # {:ok, flush_timer} = :timer.st
-    {:ok, flush_timer} = :timer.send_interval(@carat_ms, :flush_dirty)
+    {:ok, flush_timer} = :timer.send_interval(sync_interval, :flush_dirty)
 
 
     state = %{
