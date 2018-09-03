@@ -23,7 +23,7 @@ defmodule Scenic.Driver.Glfw do
 
   @default_clear_color      {0,0,0,0xFF}
 
-  @default_sync             15
+  @default_sync             30
 
   #============================================================================
   # client callable api
@@ -74,6 +74,11 @@ end
     executable = :code.priv_dir(:scenic_driver_glfw) ++ @port ++ port_args
     port = Port.open({:spawn, executable}, [:binary, {:packet, 4}])
 
+    # start the flush timer
+    # {:ok, flush_timer} = :timer.st
+    {:ok, flush_timer} = :timer.send_interval(@carat_ms, :flush_dirty)
+
+
     state = %{
       inputs:         0x0000,
       port:           port,
@@ -98,6 +103,7 @@ end
       draw_busy:      false,
       pending_flush:  false,
       currently_drawing: [],
+      flush_timer:    flush_timer,
 
       window:         { width, height },
       frame:          { width, height },
@@ -147,7 +153,7 @@ IO.puts "call #{inspect(msg)}"
 #  end
 
   #--------------------------------------------------------
-  def handle_info( :flush_dirty, state ) do
+  def handle_info( :flush_dirty, %{ready: true} = state ) do
     Glfw.Graph.handle_flush_dirty( state )
   end
 

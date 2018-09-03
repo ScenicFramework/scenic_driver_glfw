@@ -25,18 +25,21 @@ defmodule Scenic.Driver.Glfw.Graph do
   # by being rendered too quickly after the previous render cycle.
   # Enum.uniq means that if a graph is update multiple times within
   # a single frame, it will only be rendered out once
-  def handle_flush_dirty( %{
-    draw_busy: true,
-    sync_interval: sync_interval
-  } = state ) do
-IO.puts "flush BUSY"
-    # already busy drawing. Try again later.
-    # This is similar to skipping a frame
-    Process.send_after(self(), :flush_dirty, sync_interval)
-    {:noreply, state }
-  end
+#   def handle_flush_dirty( %{
+#     pending_flush: true,
+#     draw_busy: true,
+#     sync_interval: sync_interval
+#   } = state ) do
+# IO.puts "flush BUSY"
+#     # already busy drawing. Try again later.
+#     # This is similar to skipping a frame
+#     Process.send_after(self(), :flush_dirty, sync_interval)
+#     {:noreply, state }
+#   end
 
   def handle_flush_dirty( %{
+    pending_flush: true,
+    draw_busy: false,
     dirty_graphs: dg
   } = state ) do
 IO.puts "flush"
@@ -51,6 +54,9 @@ IO.puts "flush"
     
     {:noreply, state }
   end
+
+  # not pending
+  def handle_flush_dirty( state ), do: {:noreply, state }
 
 
 
@@ -132,7 +138,7 @@ IO.puts "update_graph immediate"
     state = render_graphs( graph_key, state )
 
     # queue up a :flush_dirty message to catch future fast-follow renders
-    Process.send_after(self(), :flush_dirty, sync_interval)
+    # Process.send_after(self(), :flush_dirty, sync_interval)
     {:noreply, %{state | pending_flush: true}}
   end
 
