@@ -23,7 +23,7 @@ defmodule Scenic.Driver.Glfw do
 
   @default_clear_color      {0,0,0,0xFF}
 
-  @default_sync             30
+  @default_sync             15
 
   #============================================================================
   # client callable api
@@ -74,11 +74,6 @@ end
     executable = :code.priv_dir(:scenic_driver_glfw) ++ @port ++ port_args
     port = Port.open({:spawn, executable}, [:binary, {:packet, 4}])
 
-    # start the flush timer
-    # {:ok, flush_timer} = :timer.st
-    {:ok, flush_timer} = :timer.send_interval(sync_interval, :flush_dirty)
-
-
     state = %{
       inputs:         0x0000,
       port:           port,
@@ -103,7 +98,6 @@ end
       draw_busy:      false,
       pending_flush:  false,
       currently_drawing: [],
-      flush_timer:    flush_timer,
 
       window:         { width, height },
       frame:          { width, height },
@@ -124,13 +118,11 @@ end
 
   #--------------------------------------------------------
   def handle_call( msg, from, state ) do
-IO.puts "call #{inspect(msg)}"
     Glfw.Port.handle_call(msg, from, state )
   end
 
   #--------------------------------------------------------
   def handle_cast( msg,  state ) do #%{ready: true} =
-# IO.puts "cast #{inspect(msg)}"
     msg
     |> do_handle( &Glfw.Graph.handle_cast( &1, state ) )
     |> do_handle( &Glfw.Cache.handle_cast( &1, state ) )
@@ -164,7 +156,6 @@ IO.puts "call #{inspect(msg)}"
 
   #--------------------------------------------------------
   def handle_info( {msg_port, {:data, msg }}, %{port: port} = state ) when msg_port == port do
-IO.puts "port info #{inspect(msg)}"
     msg
     |> do_handle( &Glfw.Input.handle_port_message(&1, state) )
   end

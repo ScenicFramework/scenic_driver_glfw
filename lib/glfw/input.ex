@@ -122,8 +122,6 @@ defmodule Scenic.Driver.Glfw.Input do
     currently_drawing = List.delete(currently_drawing, id)
     state = %{state | currently_drawing: currently_drawing}
 
-    IO.puts "done drawing #{inspect(id)}"
-
     # if the current draw is done, mark it so
     case currently_drawing do
       [] -> {:noreply, %{state | draw_busy: false}}
