@@ -145,7 +145,7 @@ end
 #  end
 
   #--------------------------------------------------------
-  def handle_info( :flush_dirty, %{ready: true} = state ) do
+  def handle_info( :flush_dirty, state ) do
     Glfw.Graph.handle_flush_dirty( state )
   end
 
