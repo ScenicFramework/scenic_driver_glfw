@@ -5,24 +5,24 @@
 # a collection of functions for handling port specific messages
 #
 defmodule Scenic.Driver.Glfw.Port do
-#  alias Scenic.Driver.Glfw
+  #  alias Scenic.Driver.Glfw
 
-  @msg_stats_id             0x01
+  @msg_stats_id 0x01
 
-  @cmd_close                0x20
-  @cmd_query_stats          0x21
-  @cmd_reshape              0x22
-  @cmd_position             0x23
-  @cmd_focus                0x24
-  @cmd_iconify              0x25
-  @cmd_maximize             0x26
-  @cmd_restore              0x27
-  @cmd_show                 0x28
-  @cmd_hide                 0x29
+  @cmd_close 0x20
+  @cmd_query_stats 0x21
+  @cmd_reshape 0x22
+  @cmd_position 0x23
+  @cmd_focus 0x24
+  @cmd_iconify 0x25
+  @cmd_maximize 0x26
+  @cmd_restore 0x27
+  @cmd_show 0x28
+  @cmd_hide 0x29
 
-  @cmd_clear_dl             0x02
-  @cmd_set_root_dl          0x03
-  @cmd_clear_color          0x05
+  @cmd_clear_dl 0x02
+  @cmd_set_root_dl 0x03
+  @cmd_clear_color 0x05
 
   # @cmd_new_dl_id            0x30
   # @cmd_free_dl_id           0x31
@@ -32,24 +32,21 @@ defmodule Scenic.Driver.Glfw.Port do
 
   # @cmd_crash                0xFE
 
-  @min_window_width         40     
-  @min_window_height        20
+  @min_window_width 40
+  @min_window_height 20
 
+  # define   CMD_NEW_DL_ID             0x30
+  # define   CMD_FREE_DL_ID            0x31
+  # define   CMD_ROOT_DL_ID            0x32
 
-
-#define   CMD_NEW_DL_ID             0x30
-#define   CMD_FREE_DL_ID            0x31
-#define   CMD_ROOT_DL_ID            0x32
-
-#define   CMD_NEW_TX_ID             0x33
-#define   CMD_FREE_TX_ID            0x34
-#define   CMD_PUT_TX_FILE           0x35
-#define   CMD_PUT_TX_RAW            0x36
+  # define   CMD_NEW_TX_ID             0x33
+  # define   CMD_FREE_TX_ID            0x34
+  # define   CMD_PUT_TX_FILE           0x35
+  # define   CMD_PUT_TX_RAW            0x36
 
   # import IEx
 
-
-  #============================================================================
+  # ============================================================================
   # send a message to the port. Not documented as it should be called by the other
   # functions, which prepare data for it.
   @doc false
@@ -61,8 +58,7 @@ defmodule Scenic.Driver.Glfw.Port do
     end
   end
 
-
-  #============================================================================
+  # ============================================================================
   # all internal functions.
 
   # allocate a display list on the graphics card and pass it's id back up
@@ -87,37 +83,40 @@ defmodule Scenic.Driver.Glfw.Port do
 
   @doc false
   def clear_dl(port, dl_id) do
-    Port.command(port,
+    Port.command(
+      port,
       <<
-        @cmd_clear_dl :: unsigned-integer-size(32)-native,
-        dl_id :: unsigned-integer-size(32)-native
+        @cmd_clear_dl::unsigned-integer-size(32)-native,
+        dl_id::unsigned-integer-size(32)-native
       >>
     )
   end
 
   @doc false
   def set_root_dl(port, root_dl) do
-    Port.command(port,
+    Port.command(
+      port,
       <<
-        @cmd_set_root_dl :: unsigned-integer-size(32)-native,
-        root_dl :: integer-size(32)-native
+        @cmd_set_root_dl::unsigned-integer-size(32)-native,
+        root_dl::integer-size(32)-native
       >>
     )
   end
 
-  def clear_color(port, {r,g,b,a}) do
-    Port.command(port,
+  def clear_color(port, {r, g, b, a}) do
+    Port.command(
+      port,
       <<
-        @cmd_clear_color :: unsigned-integer-size(32)-native,
-        r :: unsigned-integer-size(32)-native,
-        g :: unsigned-integer-size(32)-native,
-        b :: unsigned-integer-size(32)-native,
-        a :: unsigned-integer-size(32)-native
+        @cmd_clear_color::unsigned-integer-size(32)-native,
+        r::unsigned-integer-size(32)-native,
+        g::unsigned-integer-size(32)-native,
+        b::unsigned-integer-size(32)-native,
+        a::unsigned-integer-size(32)-native
       >>
     )
   end
 
-  #============================================================================
+  # ============================================================================
   # all internal functions.
 
   # allocate a display list on the graphics card and pass it's id back up
@@ -155,127 +154,126 @@ defmodule Scenic.Driver.Glfw.Port do
   #   )
   # end
 
-
-
-  #============================================================================
+  # ============================================================================
   @doc false
-  def handle_call( :query_stats, _from, %{port: port} = state ) do
-    Port.command(port, <<@cmd_query_stats :: unsigned-integer-size(32)-native>>)
-    reply = receive do
-      {^port, {:data, <<@msg_stats_id :: size(8),
-        input_flags :: unsigned-integer-native-size(32),
-        x_pos       :: integer-native-size(32),
-        y_pos       :: integer-native-size(32),
-        width       :: integer-native-size(32),
-        height      :: integer-native-size(32),
-        focused     :: size(8),
-        resizable   :: size(8),
-        iconified   :: size(8),
-        maximized   :: size(8),
-        visible     :: size(8)
-      >> }} ->
-        {:ok, %{
-          input_flags:  input_flags,
-          x_pos:        x_pos,
-          y_pos:        y_pos,
-          width:        width,
-          height:       height,
-          focused:      focused != 0,
-          resizable:    resizable != 0,
-          iconified:    iconified != 0,
-          maximized:    maximized != 0,
-          visible:      visible != 0,
-          pid:          self(),
-          module:       __MODULE__
-        }}
-    after 
-      200 -> {:err, :timeout}
-    end
+  def handle_call(:query_stats, _from, %{port: port} = state) do
+    Port.command(port, <<@cmd_query_stats::unsigned-integer-size(32)-native>>)
+
+    reply =
+      receive do
+        {^port,
+         {:data,
+          <<@msg_stats_id::size(8), input_flags::unsigned-integer-native-size(32),
+            x_pos::integer-native-size(32), y_pos::integer-native-size(32),
+            width::integer-native-size(32), height::integer-native-size(32), focused::size(8),
+            resizable::size(8), iconified::size(8), maximized::size(8), visible::size(8)>>}} ->
+          {:ok,
+           %{
+             input_flags: input_flags,
+             x_pos: x_pos,
+             y_pos: y_pos,
+             width: width,
+             height: height,
+             focused: focused != 0,
+             resizable: resizable != 0,
+             iconified: iconified != 0,
+             maximized: maximized != 0,
+             visible: visible != 0,
+             pid: self(),
+             module: __MODULE__
+           }}
+      after
+        200 -> {:err, :timeout}
+      end
+
     {:reply, reply, state}
   end
 
-
-  #============================================================================
+  # ============================================================================
   @doc false
-  def handle_cast( msg, state)
+  def handle_cast(msg, state)
 
-  def handle_cast( {:reshape, {w, h}}, %{port: port} = state) when is_integer(w) and is_integer(h) do
+  def handle_cast({:reshape, {w, h}}, %{port: port} = state)
+      when is_integer(w) and is_integer(h) do
     # enforce a minimum size...
-    w = cond do
-      w < @min_window_width -> @min_window_width
-      true -> w
-    end
-    h = cond do
-      h < @min_window_height -> @min_window_height
-      true -> h
-    end
+    w =
+      cond do
+        w < @min_window_width -> @min_window_width
+        true -> w
+      end
+
+    h =
+      cond do
+        h < @min_window_height -> @min_window_height
+        true -> h
+      end
+
     msg = <<
-      @cmd_reshape :: unsigned-integer-size(32)-native,
-      w :: integer-size(32)-native,
-      h :: integer-size(32)-native
+      @cmd_reshape::unsigned-integer-size(32)-native,
+      w::integer-size(32)-native,
+      h::integer-size(32)-native
     >>
+
     Port.command(port, msg)
     {:noreply, state}
   end
 
-  def handle_cast( {:position, {x, y}}, %{port: port} = state) when is_integer(x) and is_integer(y) do
+  def handle_cast({:position, {x, y}}, %{port: port} = state)
+      when is_integer(x) and is_integer(y) do
     msg = <<
-      @cmd_position :: unsigned-integer-size(32)-native,
-      x :: integer-size(32)-native,
-      y :: integer-size(32)-native
+      @cmd_position::unsigned-integer-size(32)-native,
+      x::integer-size(32)-native,
+      y::integer-size(32)-native
     >>
+
     Port.command(port, msg)
     {:noreply, state}
   end
 
-# if Mix.env() == :dev do
-#   def handle_cast( :crash, %{port: port} = state) do
-#     Port.command(port, <<@cmd_crash :: unsigned-integer-size(32)-native>>)
-#     {:noreply, state}
-#   end
-# end
+  # if Mix.env() == :dev do
+  #   def handle_cast( :crash, %{port: port} = state) do
+  #     Port.command(port, <<@cmd_crash :: unsigned-integer-size(32)-native>>)
+  #     {:noreply, state}
+  #   end
+  # end
 
-  def handle_cast( :close, %{port: port} = state) do
-    Port.command(port, <<@cmd_close :: unsigned-integer-size(32)-native>>)
+  def handle_cast(:close, %{port: port} = state) do
+    Port.command(port, <<@cmd_close::unsigned-integer-size(32)-native>>)
     {:noreply, state}
   end
 
-  def handle_cast( :focus, %{port: port} = state) do
-    Port.command(port, <<@cmd_focus :: unsigned-integer-size(32)-native>>)
+  def handle_cast(:focus, %{port: port} = state) do
+    Port.command(port, <<@cmd_focus::unsigned-integer-size(32)-native>>)
     {:noreply, state}
   end
 
-  def handle_cast( :iconify, %{port: port} = state) do
-    Port.command(port, <<@cmd_iconify :: unsigned-integer-size(32)-native>>)
+  def handle_cast(:iconify, %{port: port} = state) do
+    Port.command(port, <<@cmd_iconify::unsigned-integer-size(32)-native>>)
     {:noreply, state}
   end
 
-  def handle_cast( :maximize, %{port: port} = state) do
-    Port.command(port, <<@cmd_maximize :: unsigned-integer-size(32)-native>>)
+  def handle_cast(:maximize, %{port: port} = state) do
+    Port.command(port, <<@cmd_maximize::unsigned-integer-size(32)-native>>)
     {:noreply, state}
   end
 
-  def handle_cast( :restore, %{port: port} = state) do
-    Port.command(port, <<@cmd_restore :: unsigned-integer-size(32)-native>>)
+  def handle_cast(:restore, %{port: port} = state) do
+    Port.command(port, <<@cmd_restore::unsigned-integer-size(32)-native>>)
     {:noreply, state}
   end
 
-  def handle_cast( :show, %{port: port} = state) do
-    Port.command(port, <<@cmd_show :: unsigned-integer-size(32)-native>>)
+  def handle_cast(:show, %{port: port} = state) do
+    Port.command(port, <<@cmd_show::unsigned-integer-size(32)-native>>)
     {:noreply, state}
   end
 
-  def handle_cast( :hide, %{port: port} = state) do
-    Port.command(port, <<@cmd_hide :: unsigned-integer-size(32)-native>>)
+  def handle_cast(:hide, %{port: port} = state) do
+    Port.command(port, <<@cmd_hide::unsigned-integer-size(32)-native>>)
     {:noreply, state}
   end
 
   # unhandled. do nothing
-  def handle_cast( msg, _), do: msg
+  def handle_cast(msg, _), do: msg
 
-
-  #============================================================================
-
-
-
+  # ============================================================================
 end
