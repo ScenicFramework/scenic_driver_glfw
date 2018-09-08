@@ -29,6 +29,12 @@ apt-get install pkgconf libglfw3 libglfw3-dev libglew2.0 libglew-dev
 
 Once these components have been installed, you should be able to build the `scenic_driver_glfw` driver.
 
+### Installing on Arch Linux
+
+```bash
+pacman -Syu
+pacman -S glfw-x11
+```
 
 ## General Installation
 
