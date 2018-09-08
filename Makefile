@@ -14,6 +14,7 @@ ifeq ($(MIX_ENV),dev)
 endif
 
 LDFLAGS += `pkg-config --static --libs glfw3 glew`
+CFLAGS += `pkg-config --static --cflags glfw3 glew`
 
 
 ifneq ($(OS),Windows_NT)
