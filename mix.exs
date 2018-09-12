@@ -1,6 +1,9 @@
 defmodule Scenic.Driver.Glfw.MixProject do
   use Mix.Project
 
+  @scenic_version "0.7.0"
+  @github "https://github.com/boydm/scenic_driver_glfw"
+
   def project do
     [
       app: :scenic_driver_glfw,
@@ -17,7 +20,16 @@ defmodule Scenic.Driver.Glfw.MixProject do
       make_env: %{"MIX_ENV" => to_string(Mix.env())},
       make_clean: ["clean"],
       deps: deps(),
-      dialyzer: [plt_add_deps: :transitive]
+      dialyzer: [plt_add_deps: :transitive],
+      package: [
+        name: :scenic_driver_glfw,
+        contributors: ["Boyd Multerer"],
+        maintainers: ["Boyd Multerer"],
+        licenses: ["Apache 2"],
+        links: %{github: @github},
+        files: ["c_src/*.[ch]", "config", "fonts", "lib", "Makefile",
+          "mix.exs", "README.md"]
+      ]
     ]
   end
 
@@ -32,7 +44,8 @@ defmodule Scenic.Driver.Glfw.MixProject do
   defp deps do
     [
       {:elixir_make, "~> 0.4"},
-      {:scenic, git: "git@github.com:boydm/scenic.git"},
+      {:scenic, "~> #{@scenic_version}"},
+      # {:ex_doc, ">= 0.0.0", only: [:dev, :docs]},
       {:dialyxir, "~> 0.5", only: :dev, runtime: false}
     ]
   end
