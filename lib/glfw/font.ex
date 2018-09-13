@@ -47,11 +47,9 @@ defmodule Scenic.Driver.Glfw.Font do
       byte_size(name) + 1::unsigned-integer-size(32)-native,
       byte_size(path) + 1::unsigned-integer-size(32)-native,
       name::binary,
-      # null terminate so it can be used directly
-      0::size(8),
+      0::size(8), # null terminate so it can be used directly
       path::binary,
-      # null terminate so it can be used directly
-      0::size(8)
+      0::size(8), # null terminate so it can be used directly
     >>
     |> Glfw.Port.send(port)
   end
@@ -60,15 +58,14 @@ defmodule Scenic.Driver.Glfw.Font do
   defp load_cache_font(font_key, port) do
     with {:ok, font_blob} <- Cache.fetch(font_key) do
       # send the message to the C driver to load the font
-      [
-        <<
-          @cmd_load_font_blob::unsigned-integer-size(32)-native,
-          byte_size(font_key)::unsigned-integer-size(32)-native,
-          byte_size(font_blob)::unsigned-integer-size(32)-native
-        >>,
-        font_key,
-        font_blob
-      ]
+      <<
+        @cmd_load_font_blob :: unsigned-integer-size(32)-native,
+        byte_size(font_key) + 1 :: unsigned-integer-size(32)-native,
+        byte_size(font_blob) :: unsigned-integer-size(32)-native,
+        font_key :: binary,
+        0 :: size(8), # null terminate so it can be used directly
+        font_blob :: binary
+      >>
       |> Glfw.Port.send(port)
     else
       _ ->
@@ -82,13 +79,12 @@ defmodule Scenic.Driver.Glfw.Font do
   def free_font(font_name_or_key, port) do
     name = to_string(font_name_or_key)
     # send the message to the C driver to load the font
-    [
-      <<
-        @cmd_free_font::unsigned-integer-size(32)-native,
-        byte_size(name)::unsigned-integer-size(16)-native
-      >>,
-      name
-    ]
+    <<
+      @cmd_free_font::unsigned-integer-size(32)-native,
+      byte_size(name) + 1::unsigned-integer-size(16)-native,
+      name :: binary,
+      0 :: size(8) # null terminate so it can be used directly
+    >>
     |> Glfw.Port.send(port)
   end
 end
