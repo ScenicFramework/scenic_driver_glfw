@@ -1,13 +1,13 @@
 defmodule Scenic.Driver.Glfw.MixProject do
   use Mix.Project
 
-  @scenic_version "0.7"
+  @scenic_version "0.8"
   @github "https://github.com/boydm/scenic_driver_glfw"
 
   def project do
     [
       app: :scenic_driver_glfw,
-      version: "0.7.1",
+      version: "0.8.0",
       build_path: "_build",
       config_path: "config/config.exs",
       deps_path: "deps",
