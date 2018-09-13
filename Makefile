@@ -1,5 +1,5 @@
 \MIX = mix
-CFLAGS = -O3
+CFLAGS = -O3 -std=c99
 
 ifndef MIX_ENV
 	MIX_ENV = dev

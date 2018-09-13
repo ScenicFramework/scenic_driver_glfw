@@ -430,7 +430,7 @@ defmodule Scenic.Driver.Glfw.Compile do
   end
 
   defp do_compile_tx(ops, :inv_pin, {dx, dy}) do
-    {dx, dy} = Scenic.Math.Vector.invert({dx, dy})
+    {dx, dy} = Scenic.Math.Vector2.invert({dx, dy})
 
     [
       <<
