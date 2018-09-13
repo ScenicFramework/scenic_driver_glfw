@@ -1,13 +1,13 @@
 defmodule Scenic.Driver.Glfw.MixProject do
   use Mix.Project
 
-  @scenic_version "0.7.0"
+  @scenic_version "0.7"
   @github "https://github.com/boydm/scenic_driver_glfw"
 
   def project do
     [
       app: :scenic_driver_glfw,
-      version: "0.7.0",
+      version: "0.7.1",
       build_path: "_build",
       config_path: "config/config.exs",
       deps_path: "deps",
@@ -29,6 +29,13 @@ defmodule Scenic.Driver.Glfw.MixProject do
         links: %{github: @github},
         files: ["c_src/*.[ch]", "config", "fonts", "lib", "Makefile",
           "mix.exs", "README.md"]
+      ],
+      docs: [
+        extras: doc_guides(),
+        main: "overview",
+        # source_ref: "v#{@version}",
+        # source_url: "https://github.com/boydm/scenic",
+        # homepage_url: "http://kry10.com",
       ]
     ]
   end
@@ -45,7 +52,7 @@ defmodule Scenic.Driver.Glfw.MixProject do
     [
       {:elixir_make, "~> 0.4"},
       {:scenic, "~> #{@scenic_version}"},
-      # {:ex_doc, ">= 0.0.0", only: [:dev, :docs]},
+      {:ex_doc, ">= 0.0.0", only: [:dev]},
       {:dialyxir, "~> 0.5", only: :dev, runtime: false}
     ]
   end
@@ -54,5 +61,11 @@ defmodule Scenic.Driver.Glfw.MixProject do
     """
     Scenic.Driver.Glfw - Main Scenic driver for MacOs and Ubuntu
     """
+  end
+
+  defp doc_guides do
+    [
+      "guides/overview.md"
+    ]
   end
 end
