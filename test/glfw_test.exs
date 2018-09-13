@@ -7,7 +7,7 @@ defmodule Scenic.Driver.GlfwTest do
   import Scenic.Primitives
   alias Scenic.Driver.Glfw
 
-  import IEx
+  # import IEx
 
   @name   :glfw_test
   @size   {700, 600}
@@ -23,7 +23,7 @@ defmodule Scenic.Driver.GlfwTest do
   @font_hash "o3FsNZ8jSxxunWBCLXtpVhTd06Q"
   @font_path "test/static/Indie_Flower/IndieFlower.ttf"
 
-  @parrot_hash "0DMsqJaAU2OyRdd9Hp3WWJoO3WE"
+  @parrot_hash "UfHCVlANI2cFbwSpJey64FxjT-0"
   @parrot_path "test/static/scenic_parrot.png"
 
   setup do
@@ -59,9 +59,12 @@ defmodule Scenic.Driver.GlfwTest do
     scene_ref = make_ref()
     graph_key = {:graph, scene_ref, nil}
 
+    # load the parrot texture into the cache
+    Scenic.Cache.File.load(@parrot_path, @parrot_hash)
 
     # give the port time to spin up
-    Process.sleep(2000)
+    Process.sleep(1500)
+    Glfw.Cache.load_texture(@parrot_hash, state.port)
 
     # arc
     Graph.build()
@@ -102,6 +105,13 @@ defmodule Scenic.Driver.GlfwTest do
 
     Graph.build()
     |> circle(100, stroke: {8, :green}, fill: {:box, {0,0,100,100,40,10,:red,:yellow} }, translate: {200, 200})
+    |> test_push_graph(graph_key)
+    {:noreply, state} = Glfw.handle_cast( {:update_graph, graph_key}, state )
+    state =  %{state | pending_flush: false, dirty_graphs: []}
+    Process.sleep(40)
+
+    Graph.build()
+    |> circle(100, stroke: {8, :green}, fill: {:image, @parrot_hash }, translate: {200, 200})
     |> test_push_graph(graph_key)
     {:noreply, state} = Glfw.handle_cast( {:update_graph, graph_key}, state )
     state =  %{state | pending_flush: false, dirty_graphs: []}
@@ -275,18 +285,16 @@ defmodule Scenic.Driver.GlfwTest do
     Process.sleep(40)
 
 
-
     # custom font
-    assert Scenic.Cache.File.load(@font_path, @font_hash) == {:ok, @font_hash}
+    assert Cache.File.load(@font_path, @font_hash) == {:ok, @font_hash}
     Glfw.Font.load_font(@font_hash, state.port)
-    Graph.build(font: @font_hash, font_size: 40)
+    Graph.build(font: @font_hash, font_size: 60)
     |> text("From a cached font", fill: :azure, translate: {100, 100})
     |> test_push_graph(graph_key)
     {:noreply, state} = Glfw.handle_cast( {:update_graph, graph_key}, state )
     state =  %{state | pending_flush: false, dirty_graphs: []}
-    Process.sleep(4000)
-
-
+    Process.sleep(40)
+    Glfw.Font.free_font(@font_hash, state.port)
 
 
     # triangles
