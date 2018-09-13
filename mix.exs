@@ -26,12 +26,11 @@ defmodule Scenic.Driver.Glfw.MixProject do
         maintainers: ["Boyd Multerer"],
         licenses: ["Apache 2"],
         links: %{github: @github},
-        files: ["c_src/*.[ch]", "config", "fonts", "lib", "Makefile",
-          "mix.exs", "README.md"]
+        files: ["c_src/*.[ch]", "config", "fonts", "lib", "Makefile", "mix.exs", "README.md"]
       ],
       docs: [
         extras: doc_guides(),
-        main: "overview",
+        main: "overview"
         # source_ref: "v#{@version}",
         # source_url: "https://github.com/boydm/scenic",
         # homepage_url: "http://kry10.com",
@@ -50,8 +49,9 @@ defmodule Scenic.Driver.Glfw.MixProject do
   defp deps do
     [
       {:elixir_make, "~> 0.4"},
-      {:scenic, "~> 0.7"},
+
       # {:scenic, "~> 0.8"},
+      {:scenic, git: "git@github.com:boydm/scenic.git"},
       {:ex_doc, ">= 0.0.0", only: [:dev]},
       {:dialyxir, "~> 0.5", only: :dev, runtime: false}
     ]

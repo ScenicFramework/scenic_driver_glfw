@@ -5,14 +5,9 @@
 #  sends data to a Glfw port app
 #
 defmodule Scenic.Driver.Glfw do
+  @moduledoc """
 
-@moduledoc """
-
-"""
-
-
-
-
+  """
 
   use Scenic.ViewPort.Driver
   alias Scenic.Cache

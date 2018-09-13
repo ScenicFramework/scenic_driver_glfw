@@ -47,9 +47,11 @@ defmodule Scenic.Driver.Glfw.Font do
       byte_size(name) + 1::unsigned-integer-size(32)-native,
       byte_size(path) + 1::unsigned-integer-size(32)-native,
       name::binary,
-      0::size(8), # null terminate so it can be used directly
+      # null terminate so it can be used directly
+      0::size(8),
       path::binary,
-      0::size(8), # null terminate so it can be used directly
+      # null terminate so it can be used directly
+      0::size(8)
     >>
     |> Glfw.Port.send(port)
   end
@@ -59,12 +61,13 @@ defmodule Scenic.Driver.Glfw.Font do
     with {:ok, font_blob} <- Cache.fetch(font_key) do
       # send the message to the C driver to load the font
       <<
-        @cmd_load_font_blob :: unsigned-integer-size(32)-native,
-        byte_size(font_key) + 1 :: unsigned-integer-size(32)-native,
-        byte_size(font_blob) :: unsigned-integer-size(32)-native,
-        font_key :: binary,
-        0 :: size(8), # null terminate so it can be used directly
-        font_blob :: binary
+        @cmd_load_font_blob::unsigned-integer-size(32)-native,
+        byte_size(font_key) + 1::unsigned-integer-size(32)-native,
+        byte_size(font_blob)::unsigned-integer-size(32)-native,
+        font_key::binary,
+        # null terminate so it can be used directly
+        0::size(8),
+        font_blob::binary
       >>
       |> Glfw.Port.send(port)
     else
@@ -82,8 +85,9 @@ defmodule Scenic.Driver.Glfw.Font do
     <<
       @cmd_free_font::unsigned-integer-size(32)-native,
       byte_size(name) + 1::unsigned-integer-size(16)-native,
-      name :: binary,
-      0 :: size(8) # null terminate so it can be used directly
+      name::binary,
+      # null terminate so it can be used directly
+      0::size(8)
     >>
     |> Glfw.Port.send(port)
   end
