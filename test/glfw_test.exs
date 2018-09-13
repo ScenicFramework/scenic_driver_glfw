@@ -2,12 +2,11 @@ defmodule Scenic.Driver.GlfwTest do
   use ExUnit.Case
   doctest Scenic.Driver.Glfw
   alias Scenic.Graph
-  alias Scenic.ViewPort
   alias Scenic.Scene
   import Scenic.Primitives
   alias Scenic.Driver.Glfw
 
-  import IEx
+  # import IEx
 
   @name   :glfw_test
   @size   {700, 600}
@@ -17,9 +16,8 @@ defmodule Scenic.Driver.GlfwTest do
           opts: [resizeable: false, title: inspect(__MODULE__)],
         }
 
-  @graph_simple Graph.build()
-  |> circle(100, stroke: {2, :green}, translate: {200, 200})
 
+  @triangle {{0, 260}, {250, 0}, {250, 260}}
 
   setup do
     %{}
@@ -149,13 +147,153 @@ defmodule Scenic.Driver.GlfwTest do
 
     # path
     Graph.build()
-    |> line( {{0,0},{200,200}}, stroke: {4, :green} )
-    |> line( {{0,200},{200,0}}, stroke: {4, :red} )
+    |> path( [
+        :begin,
+        {:move_to, 0, 0},
+        {:bezier_to, 0, 20, 0, 50, 40, 50},
+        {:bezier_to, 60, 50, 60, 20, 80, 20},
+        {:bezier_to, 100, 20, 110, 0, 120, 0},
+        {:bezier_to, 140, 0, 160, 30, 160, 50}
+      ], stroke: {4, :green} )
     |> test_push_graph(graph_key)
     {:noreply, state} = Glfw.handle_cast( {:update_graph, graph_key}, state )
     state =  %{state | pending_flush: false, dirty_graphs: []}
 
-    Process.sleep(100)
+    # quad
+    Graph.build()
+    |> quad( {{0,20},{30,0},{36,26},{25,40}}, stroke: {4, :green}, fill: :purple )
+    |> test_push_graph(graph_key)
+    {:noreply, state} = Glfw.handle_cast( {:update_graph, graph_key}, state )
+    state =  %{state | pending_flush: false, dirty_graphs: []}
+    Process.sleep(40)
+
+    # rect
+    Graph.build()
+    |> rect( {200,100}, stroke: {4, :green}, fill: :red, translate: {40, 60} )
+    |> test_push_graph(graph_key)
+    {:noreply, state} = Glfw.handle_cast( {:update_graph, graph_key}, state )
+    state =  %{state | pending_flush: false, dirty_graphs: []}
+    Process.sleep(40)
+
+    # rounded rect
+    Graph.build()
+    |> rrect( {200,100, 20}, stroke: {4, :green}, fill: :red, translate: {40, 60} )
+    |> test_push_graph(graph_key)
+    {:noreply, state} = Glfw.handle_cast( {:update_graph, graph_key}, state )
+    state =  %{state | pending_flush: false, dirty_graphs: []}
+    Process.sleep(40)
+
+    # sector
+    Graph.build()
+    |> sector({200,0,1}, stroke: {2, :yellow}, translate: {100, 100})
+    |> test_push_graph(graph_key)
+    {:noreply, state} = Glfw.handle_cast( {:set_root, graph_key}, state )
+    state =  %{state | pending_flush: false, dirty_graphs: []}
+    Process.sleep(40)
+
+    Graph.build()
+    |> sector({200,0,1}, stroke: {8, {:radial, {0,0,10,90,:blue,:yellow} }}, translate: {100, 100})
+    |> test_push_graph(graph_key)
+    {:noreply, state} = Glfw.handle_cast( {:set_root, graph_key}, state )
+    state =  %{state | pending_flush: false, dirty_graphs: []}
+    Process.sleep(40)
+
+    Graph.build()
+    |> sector({200,0,1}, stroke: {8, {:linear, {-100,-100,100,100,:blue,:green} }}, translate: {100, 100})
+    |> test_push_graph(graph_key)
+    {:noreply, state} = Glfw.handle_cast( {:set_root, graph_key}, state )
+    state =  %{state | pending_flush: false, dirty_graphs: []}
+    Process.sleep(40)
+
+    Graph.build()
+    |> sector({200,0,1}, stroke: {8, {:box, {0,0,100,100,40,10,:red,:yellow} }}, translate: {100, 100})
+    |> test_push_graph(graph_key)
+    {:noreply, state} = Glfw.handle_cast( {:set_root, graph_key}, state )
+    state =  %{state | pending_flush: false, dirty_graphs: []}
+    Process.sleep(40)
+
+    # text
+    Glfw.Font.load_font(:roboto, state.port)
+    Glfw.Font.load_font(:roboto_mono, state.port)
+    Glfw.Font.load_font(:roboto_slab, state.port)
+    
+    Graph.build(font: :roboto, font_size: 24)
+    |> text("This is some text", fill: :yellow, translate: {200, 100})
+    |> test_push_graph(graph_key)
+    {:noreply, state} = Glfw.handle_cast( {:set_root, graph_key}, state )
+    state =  %{state | pending_flush: false, dirty_graphs: []}
+    Process.sleep(40)
+    
+    Graph.build(font: :roboto_mono, font_size: 30)
+    |> text("This is some text", fill: :yellow, translate: {200, 100})
+    |> test_push_graph(graph_key)
+    {:noreply, state} = Glfw.handle_cast( {:set_root, graph_key}, state )
+    state =  %{state | pending_flush: false, dirty_graphs: []}
+    Process.sleep(40)
+    
+    Graph.build(font: :roboto_slab, font_size: 40)
+    |> text("This is some text", fill: :yellow, translate: {200, 100})
+    |> test_push_graph(graph_key)
+    {:noreply, state} = Glfw.handle_cast( {:set_root, graph_key}, state )
+    state =  %{state | pending_flush: false, dirty_graphs: []}
+    Process.sleep(40)
+    
+    Graph.build(font: :roboto, font_size: 24, text_align: :right)
+    |> text("This is some text", fill: :yellow, translate: {200, 100})
+    |> test_push_graph(graph_key)
+    {:noreply, state} = Glfw.handle_cast( {:set_root, graph_key}, state )
+    state =  %{state | pending_flush: false, dirty_graphs: []}
+    Process.sleep(40)
+    
+    Graph.build(font: :roboto_mono, font_size: 30, text_align: :center)
+    |> text("This is some text", fill: :yellow, translate: {200, 100})
+    |> test_push_graph(graph_key)
+    {:noreply, state} = Glfw.handle_cast( {:set_root, graph_key}, state )
+    state =  %{state | pending_flush: false, dirty_graphs: []}
+    Process.sleep(40)
+    
+    Graph.build(font: :roboto_slab, font_size: 40, font_blur: 2)
+    |> text("This is some text, blurred", fill: :yellow, translate: {200, 100})
+    |> test_push_graph(graph_key)
+    {:noreply, state} = Glfw.handle_cast( {:set_root, graph_key}, state )
+    state =  %{state | pending_flush: false, dirty_graphs: []}
+    Process.sleep(40)
+
+    # triangles
+    Graph.build()
+    |> triangle(@triangle, stroke: {2, :green}, translate: {100, 100})
+    |> test_push_graph(graph_key)
+    {:noreply, state} = Glfw.handle_cast( {:set_root, graph_key}, state )
+    state =  %{state | pending_flush: false, dirty_graphs: []}
+    Process.sleep(40)
+
+    Graph.build()
+    |> triangle(@triangle, stroke: {8, :green}, fill: :azure, translate: {100, 100})
+    |> test_push_graph(graph_key)
+    {:noreply, state} = Glfw.handle_cast( {:update_graph, graph_key}, state )
+    state =  %{state | pending_flush: false, dirty_graphs: []}
+    Process.sleep(40)
+
+    Graph.build()
+    |> triangle(@triangle, stroke: {8, :green}, fill: {:radial, {0,0,10,90,:blue,:yellow} }, translate: {100, 100})
+    |> test_push_graph(graph_key)
+    {:noreply, state} = Glfw.handle_cast( {:update_graph, graph_key}, state )
+    state =  %{state | pending_flush: false, dirty_graphs: []}
+    Process.sleep(40)
+
+    Graph.build()
+    |> triangle(@triangle, stroke: {8, :green}, fill: {:box, {0,0,100,100,40,10,:red,:yellow} }, translate: {100, 100})
+    |> test_push_graph(graph_key)
+    {:noreply, state} = Glfw.handle_cast( {:update_graph, graph_key}, state )
+    state =  %{state | pending_flush: false, dirty_graphs: []}
+    Process.sleep(40)
+
+    Graph.build()
+    |> triangle(@triangle, stroke: {8, :yellow}, fill: {:linear, {0,0,200,200,:blue,:green} }, translate: {100, 100})
+    |> test_push_graph(graph_key)
+    {:noreply, state} = Glfw.handle_cast( {:update_graph, graph_key}, state )
+    %{state | pending_flush: false, dirty_graphs: []}
+    Process.sleep(40)
   end
 
 
