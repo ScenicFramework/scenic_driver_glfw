@@ -51,7 +51,8 @@ defmodule Scenic.Driver.Glfw.MixProject do
   defp deps do
     [
       {:elixir_make, "~> 0.4"},
-      {:scenic, "~> #{@scenic_version}"},
+      {:scenic, "~> 0.7"},
+      # {:scenic, "~> #{@scenic_version}"},
       {:ex_doc, ">= 0.0.0", only: [:dev]},
       {:dialyxir, "~> 0.5", only: :dev, runtime: false}
     ]
