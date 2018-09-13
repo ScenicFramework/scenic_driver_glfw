@@ -138,7 +138,6 @@ defmodule Scenic.Driver.GlfwTest do
     state =  %{state | pending_flush: false, dirty_graphs: []}
     Process.sleep(40)
 
-
     # lines
     Graph.build()
     |> line( {{0,0},{200,200}}, stroke: {4, :green} )
@@ -146,8 +145,17 @@ defmodule Scenic.Driver.GlfwTest do
     |> test_push_graph(graph_key)
     {:noreply, state} = Glfw.handle_cast( {:update_graph, graph_key}, state )
     state =  %{state | pending_flush: false, dirty_graphs: []}
+    Process.sleep(40)
 
-    Process.sleep(10000)
+    # path
+    Graph.build()
+    |> line( {{0,0},{200,200}}, stroke: {4, :green} )
+    |> line( {{0,200},{200,0}}, stroke: {4, :red} )
+    |> test_push_graph(graph_key)
+    {:noreply, state} = Glfw.handle_cast( {:update_graph, graph_key}, state )
+    state =  %{state | pending_flush: false, dirty_graphs: []}
+
+    Process.sleep(100)
   end
 
 
