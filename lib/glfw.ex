@@ -28,7 +28,7 @@ defmodule Scenic.Driver.Glfw do
   @default_title "Driver Glfw"
   @default_resizeable false
 
-  @default_block_size 128
+  @default_block_size 512
 
   @default_clear_color {0, 0, 0, 0xFF}
 
