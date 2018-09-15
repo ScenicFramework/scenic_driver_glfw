@@ -99,7 +99,7 @@ functions to play a compiled render script
 
   #define OP_TERMINATE               0XFF
 
-  static const float        TAU  = M_PI * 2;
+  static const float        TAU  = NVG_PI * 2;
 
   NVGpaint current_paint;
 
