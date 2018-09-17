@@ -31,7 +31,8 @@ endif
 
 .PHONY: all clean
 
-all: priv/$(MIX_ENV)/scenic_driver_glfw fonts
+all: priv/$(MIX_ENV)/scenic_driver_glfw
+# fonts
 
 SRCS = c_src/main.c c_src/comms.c c_src/nanovg/nanovg.c \
 	c_src/utils.c c_src/render_script.c c_src/tx.c
@@ -42,8 +43,10 @@ priv/$(MIX_ENV)/scenic_driver_glfw: $(SRCS)
 	mkdir -p priv/$(MIX_ENV)
 	$(CC) $(CFLAGS) -o $@ $(SRCS) $(LDFLAGS)
 
-fonts: priv/
-	ln -fs ../fonts priv/
+# fonts: priv/
+# 	ln -fs ../fonts priv/
 
 clean:
-	$(RM) -r priv
+	$(RM) -r priv/dev
+	$(RM) -r priv/test
+	$(RM) -r priv/prod

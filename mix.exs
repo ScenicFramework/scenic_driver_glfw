@@ -13,7 +13,7 @@ defmodule Scenic.Driver.Glfw.MixProject do
       lockfile: "mix.lock",
       elixir: "~> 1.6",
       description: description(),
-      build_embedded: Mix.env() == :prod,
+      build_embedded: true,
       start_permanent: Mix.env() == :prod,
       compilers: [:elixir_make] ++ Mix.compilers(),
       make_env: %{"MIX_ENV" => to_string(Mix.env())},
