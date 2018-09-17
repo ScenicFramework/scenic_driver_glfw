@@ -22,7 +22,9 @@ erl_crash.dump
 # Ignore package tarball (built via "mix hex.build").
 scenic_driver_mac-*.tar
 
-priv/
+priv/dev
+priv/test
+priv/prod
 
 .DS_Store
 
