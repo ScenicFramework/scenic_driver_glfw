@@ -28,7 +28,8 @@ defmodule Scenic.Driver.Glfw.MixProject do
         licenses: ["Apache 2"],
         links: %{github: @github},
         files: [
-          "c_src/*.[ch]",
+          "c_src/**/*.[ch]",
+          "c_src/**/*.txt",
           "config",
           "priv/fonts",
           "lib/**/*.ex",
