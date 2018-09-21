@@ -30,8 +30,8 @@ defmodule Scenic.Driver.Glfw.MixProject do
         files: [
           "c_src/*.[ch]",
           "config",
-          "fonts",
-          "lib",
+          "priv/fonts",
+          "lib/**/*.ex",
           "Makefile",
           "mix.exs",
           "README.md"
