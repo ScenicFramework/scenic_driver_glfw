@@ -2,11 +2,12 @@ defmodule Scenic.Driver.Glfw.MixProject do
   use Mix.Project
 
   @github "https://github.com/boydm/scenic_driver_glfw"
+  @version "0.8.0"
 
   def project do
     [
       app: :scenic_driver_glfw,
-      version: "0.8.0",
+      version: @version,
       build_path: "_build",
       config_path: "config/config.exs",
       deps_path: "deps",
@@ -30,7 +31,7 @@ defmodule Scenic.Driver.Glfw.MixProject do
           "c_src/*.[ch]",
           "config",
           "fonts",
-          "lib", 
+          "lib",
           "Makefile",
           "mix.exs",
           "README.md"
@@ -40,7 +41,7 @@ defmodule Scenic.Driver.Glfw.MixProject do
         extras: doc_guides(),
         main: "overview",
         source_ref: "v#{@version}",
-        source_url: "https://github.com/boydm/scenic_driver_glfw",
+        source_url: "https://github.com/boydm/scenic_driver_glfw"
         # homepage_url: "http://kry10.com",
       ]
     ]
@@ -57,7 +58,6 @@ defmodule Scenic.Driver.Glfw.MixProject do
   defp deps do
     [
       {:elixir_make, "~> 0.4"},
-
       {:scenic, "~> 0.8"},
       {:ex_doc, ">= 0.0.0", only: [:dev]},
       {:dialyxir, "~> 0.5", only: :dev, runtime: false}
