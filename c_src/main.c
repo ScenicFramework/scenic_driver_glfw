@@ -488,6 +488,16 @@ int main(int argc, char **argv) {
   // signal the app that the window is ready
   // send_ready( p_data->context.empty_dl );
 
+#ifdef __APPLE__
+  // heinous hack to get around macOS Mojave GL issues
+  // without this, the window is blank until manually resized
+  glfwPollEvents();
+  int w, h;
+  glfwGetWindowSize(window, &w, &h);
+  glfwSetWindowSize(window, w++, h);
+  glfwSetWindowSize(window, w, h);
+#endif
+
   /* Loop until the calling app closes the window */
   while ( p_data->keep_going && !isCallerDown() ) {
 

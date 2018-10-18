@@ -21,7 +21,7 @@ ifneq ($(OS),Windows_NT)
 	CFLAGS += -fPIC
 
 	ifeq ($(shell uname),Darwin)
-		LDFLAGS += -framework Cocoa -framework OpenGL
+		LDFLAGS += -framework Cocoa -framework OpenGL -Wno-deprecated
 	else
 	  LDFLAGS += -lGL -lm -lrt
 	endif
