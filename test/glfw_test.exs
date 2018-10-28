@@ -65,6 +65,14 @@ defmodule Scenic.Driver.GlfwTest do
     Process.sleep(1500)
     Glfw.Cache.load_texture(@parrot_hash, state.port)
 
+    # clear
+    Graph.build(clear_color: :green)
+    |> test_push_graph(graph_key)
+
+    {:noreply, state} = Glfw.handle_cast({:set_root, graph_key}, state)
+    state = %{state | pending_flush: false, dirty_graphs: []}
+    Process.sleep(40)
+
     # arc
     Graph.build()
     |> arc({100, 0, 1}, stroke: {2, :green}, translate: {300, 300})

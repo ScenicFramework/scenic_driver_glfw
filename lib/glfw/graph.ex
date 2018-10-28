@@ -65,9 +65,11 @@ defmodule Scenic.Driver.Glfw.Graph do
   # --------------------------------------------------------
   def handle_cast(
         :update_clear_color,
-        %{port: port, root_ref: root_key, clear_color: old_clear_color} = state
+        %{port: port, root_ref: master_graph_key, clear_color: old_clear_color} = state
       ) do
-    with {:ok, graph} <- ViewPort.Tables.get_graph(root_key) do
+    with {:ok, master_graph} <- ViewPort.Tables.get_graph(master_graph_key),
+         {:ok, %{data: {Primitive.SceneRef, root_key}}} <- Map.fetch(master_graph, 1),
+         {:ok, graph} <- ViewPort.Tables.get_graph(root_key) do
       root_group = graph[0]
 
       clear_color =
