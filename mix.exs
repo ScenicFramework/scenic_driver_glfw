@@ -2,7 +2,7 @@ defmodule Scenic.Driver.Glfw.MixProject do
   use Mix.Project
 
   @github "https://github.com/boydm/scenic_driver_glfw"
-  @version "0.8.1"
+  @version "0.9.0"
 
   def project do
     [
@@ -59,7 +59,7 @@ defmodule Scenic.Driver.Glfw.MixProject do
   defp deps do
     [
       {:elixir_make, "~> 0.4"},
-      {:scenic, "~> 0.8"},
+      {:scenic, "~> 0.9"},
       {:ex_doc, ">= 0.0.0", only: [:dev]},
       {:dialyxir, "~> 0.5", only: :dev, runtime: false}
     ]
