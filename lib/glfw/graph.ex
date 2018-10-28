@@ -65,7 +65,7 @@ defmodule Scenic.Driver.Glfw.Graph do
   # --------------------------------------------------------
   def handle_cast(
         :update_clear_color,
-        %{port: port, root_ref: master_graph_key, clear_color: old_clear_color} = state
+        %{port: port, master_ref: master_graph_key, clear_color: old_clear_color} = state
       ) do
     with {:ok, master_graph} <- ViewPort.Tables.get_graph(master_graph_key),
          {:ok, %{data: {Primitive.SceneRef, root_key}}} <- Map.fetch(master_graph, 1),
@@ -112,7 +112,7 @@ defmodule Scenic.Driver.Glfw.Graph do
       ) do
     # Logger.warn "Glfw set_root #{inspect(graph_key)}"
 
-    state = Map.put(state, :root_ref, graph_key)
+    state = Map.put(state, :master_ref, graph_key)
 
     # build a list of keys to render
     keys =
@@ -350,14 +350,16 @@ defmodule Scenic.Driver.Glfw.Graph do
          %{
            port: port,
            dl_map: dl_map,
-           root_ref: root_ref
+           master_ref: master_graph_key
          } = state
        ) do
     dl_id = dl_map[graph_key]
 
     with {:ok, graph} <- ViewPort.Tables.get_graph(graph_key) do
       # if this is the root, check if it has a clear_color set on it.
-      if graph_key == root_ref do
+      with {:ok, master_graph} <- ViewPort.Tables.get_graph(master_graph_key),
+           {Primitive.SceneRef, root_ref} <- get_in(master_graph, [1, :data]),
+           true <- graph_key == root_ref do
         GenServer.cast(driver, :update_clear_color)
       end
 
