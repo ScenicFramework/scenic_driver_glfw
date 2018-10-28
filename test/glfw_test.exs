@@ -65,6 +65,14 @@ defmodule Scenic.Driver.GlfwTest do
     Process.sleep(1500)
     Glfw.Cache.load_texture(@parrot_hash, state.port)
 
+    # clear
+    Graph.build(clear_color: :green)
+    |> test_push_graph(graph_key)
+
+    {:noreply, state} = Glfw.handle_cast({:set_root, graph_key}, state)
+    state = %{state | pending_flush: false, dirty_graphs: []}
+    Process.sleep(400)
+
     # arc
     Graph.build()
     |> arc({100, 0, 1}, stroke: {2, :green}, translate: {300, 300})
@@ -340,7 +348,7 @@ defmodule Scenic.Driver.GlfwTest do
 
     # custom font
     Graph.build(font: :roboto_slab, font_size: 40, font_blur: 2)
-    |> text("This is some text, blurred", fill: :yellow, translate: {200, 100})
+    |> text("blurred roboto_slab", fill: :yellow, translate: {200, 100})
     |> test_push_graph(graph_key)
 
     {:noreply, state} = Glfw.handle_cast({:update_graph, graph_key}, state)
