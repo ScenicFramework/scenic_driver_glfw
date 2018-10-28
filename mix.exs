@@ -35,7 +35,9 @@ defmodule Scenic.Driver.Glfw.MixProject do
           "lib/**/*.ex",
           "Makefile",
           "mix.exs",
-          "README.md"
+          "README.md",
+          "LICENSE",
+          "changelist.md"
         ]
       ],
       docs: [
