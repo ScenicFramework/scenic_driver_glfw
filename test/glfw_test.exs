@@ -301,66 +301,50 @@ defmodule Scenic.Driver.GlfwTest do
     Graph.build(font: :roboto, font_size: 24)
     |> text("This is some text", fill: :yellow, translate: {200, 100})
     |> test_push_graph(graph_key)
+
     {:noreply, state} = Glfw.handle_cast({:update_graph, graph_key}, state)
     state = %{state | pending_flush: false, dirty_graphs: []}
     Process.sleep(40)
-
 
     Graph.build(font: :roboto_mono, font_size: 30)
     |> text("This is some text", fill: :yellow, translate: {200, 100})
     |> test_push_graph(graph_key)
+
     {:noreply, state} = Glfw.handle_cast({:update_graph, graph_key}, state)
     state = %{state | pending_flush: false, dirty_graphs: []}
     Process.sleep(40)
-
 
     Graph.build(font: :roboto_slab, font_size: 40)
     |> text("This is some text", fill: :yellow, translate: {200, 100})
     |> test_push_graph(graph_key)
+
     {:noreply, state} = Glfw.handle_cast({:update_graph, graph_key}, state)
     state = %{state | pending_flush: false, dirty_graphs: []}
     Process.sleep(40)
-
 
     Graph.build(font: :roboto, font_size: 24, text_align: :right)
     |> text("This is some text", fill: :yellow, translate: {200, 100})
     |> test_push_graph(graph_key)
+
     {:noreply, state} = Glfw.handle_cast({:update_graph, graph_key}, state)
     state = %{state | pending_flush: false, dirty_graphs: []}
     Process.sleep(40)
-
 
     Graph.build(font: :roboto_mono, font_size: 30, text_align: :center)
     |> text("This is some text", fill: :yellow, translate: {200, 100})
     |> test_push_graph(graph_key)
+
     {:noreply, state} = Glfw.handle_cast({:update_graph, graph_key}, state)
     state = %{state | pending_flush: false, dirty_graphs: []}
     Process.sleep(40)
-
-
-
-
-
-
-    Graph.build(font: :roboto_slab, font_size: 40, font_blur: 2, clear_color: :white)
-    |> text("booger booger booger", fill: :blue, translate: {200, 100})
-    |> test_push_graph(graph_key)
-    {:noreply, state} = Glfw.handle_cast({:update_graph, graph_key}, state)
-    state = %{state | pending_flush: false, dirty_graphs: []}
-    Process.sleep(4000)
-
-
-
-
-
 
     Graph.build(font: :roboto_slab, font_size: 40, font_blur: 2)
     |> text("This is some text, blurred", fill: :yellow, translate: {200, 100})
     |> test_push_graph(graph_key)
+
     {:noreply, state} = Glfw.handle_cast({:update_graph, graph_key}, state)
     state = %{state | pending_flush: false, dirty_graphs: []}
     Process.sleep(40)
-
 
     # custom font
     Graph.build(font: :roboto_slab, font_size: 40, font_blur: 2)
