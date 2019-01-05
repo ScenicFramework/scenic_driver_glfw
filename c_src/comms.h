@@ -4,8 +4,8 @@
 #
 */
 
-#ifndef COMMS_HEADER
-#define COMMS_HEADER
+#ifndef COMMS_HEADER_H
+#define COMMS_HEADER_H
 
 #ifndef bool
 #include <stdbool.h>
@@ -40,6 +40,6 @@ void* comms_thread(void* window);
 
 void test_endian();
 
-bool handle_stdio_in(struct GLFWwindow* window);
+bool handle_stdio_in(GLFWwindow* window);
 
 #endif

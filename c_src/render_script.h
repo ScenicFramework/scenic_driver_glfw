@@ -6,8 +6,8 @@
 functions to play a compiled render script
 */
 
-#ifndef _RENDER_SCRIPTS
-#define _RENDER_SCRIPTS
+#ifndef _RENDER_SCRIPTS_H
+#define _RENDER_SCRIPTS_H
 
 #include "types.h"
 

@@ -6,8 +6,8 @@
 
 // one unified place for the various structures
 
-#ifndef RENDER_GLFW_TYPES
-#define RENDER_GLFW_TYPES
+#ifndef _RENDER_GLFW_TYPES_H
+#define _RENDER_GLFW_TYPES_H
 
 #ifndef bool
 #include <stdbool.h>
