@@ -11,6 +11,8 @@
 #include <stdbool.h>
 #endif
 
+#include <GLFW/glfw3.h>
+
 bool read_bytes_down(void* p_buff, int bytes_to_read,
                      int* p_bytes_to_remaining);
 
@@ -38,6 +40,6 @@ void* comms_thread(void* window);
 
 void test_endian();
 
-bool handle_stdio_in(GLFWwindow* window);
+bool handle_stdio_in(struct GLFWwindow* window);
 
 #endif
