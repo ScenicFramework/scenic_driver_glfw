@@ -30,8 +30,6 @@ typedef struct __attribute__((__packed__))
 
 //---------------------------------------------------------
 typedef struct {
-  // pthread_rwlock_t  gl_lock;            // read-write lock for gl operations
-  // GLuint            empty_dl;           // empty dl id
   int               window_width;
   int               window_height;
   int               frame_width;

@@ -6,22 +6,12 @@
 Functions to load fonts and render text
 */
 
-
 #include <stdio.h>
-//#include <unistd.h>
-//#include <stdlib.h>           // malloc
 #include <string.h>
-//#include <pthread.h>
-
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
-//#include "types.h"
 #include "comms.h"
-//#include "render.h"
-//#include "texture.h"
-//#include "text.h"
-
 
 void check_gl_error( char* msg ) {
   char buff[400];
@@ -60,11 +50,8 @@ void check_gl_error( char* msg ) {
       sprintf(buff2, " GL_OTHER: %d", err);
       strncat(buff, buff2, 399);
       break;
-    }  
+    }
   send_puts( buff );
   }
 
 }
-
-
-

@@ -6,26 +6,18 @@
 Functions to load textures onto the graphics card
 */
 
-//#include <stdio.h>
-//#include <unistd.h>
 #include <stdlib.h>           // malloc
-//#include <string.h>
-// #include <pthread.h>
-
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
 #include "types.h"
 #include "comms.h"
-//#include "render.h"
 #include "texture.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #define STBI_NO_BMP
 #define STBI_FAILURE_USERMSG
 #include "stb_image.h"
-
-
 
 GLenum translate_texture_format( int channels ) {
   switch( channels ) {
@@ -80,35 +72,30 @@ void receive_put_tx_file( int* p_msg_length, GLFWwindow* window ) {
   GLint format = translate_texture_format( actual_channels );
 
   // set the texture onto the graphics card
-//  if ( pthread_rwlock_wrlock(&p_window_data->context.gl_lock) == 0 ) {
-    glBindTexture(GL_TEXTURE_2D, tx_id);
+  glBindTexture(GL_TEXTURE_2D, tx_id);
 
-    // https://www.opengl.org/discussion_boards/showthread.php/140246-texture-not-showing
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+  // https://www.opengl.org/discussion_boards/showthread.php/140246-texture-not-showing
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
-    // the data is tightly packed
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
-    glPixelStorei(GL_UNPACK_SKIP_PIXELS, 0);
-    glPixelStorei(GL_UNPACK_SKIP_ROWS, 0);
+  // the data is tightly packed
+  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+  glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+  glPixelStorei(GL_UNPACK_SKIP_PIXELS, 0);
+  glPixelStorei(GL_UNPACK_SKIP_ROWS, 0);
 
-    // set the texture into place
-    glTexImage2D(GL_TEXTURE_2D, 0, format, x, y, 0, format, GL_UNSIGNED_BYTE, p_img);
+  // set the texture into place
+  glTexImage2D(GL_TEXTURE_2D, 0, format, x, y, 0, format, GL_UNSIGNED_BYTE, p_img);
 
-    if ( p_window_data->context.glew_ok ) {
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, log2(x));
-      glGenerateMipmap( GL_TEXTURE_2D );
-    }
+  if ( p_window_data->context.glew_ok ) {
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, log2(x));
+    glGenerateMipmap( GL_TEXTURE_2D );
+  }
 
-    glBindTexture(GL_TEXTURE_2D, 0);
-
-    // unlock
-//    pthread_rwlock_unlock(&p_window_data->context.gl_lock);
-//  };
+  glBindTexture(GL_TEXTURE_2D, 0);
 
   // check if there was a gl error
   if ( glGetError() != GL_NO_ERROR ) {
@@ -157,35 +144,31 @@ void receive_put_tx_raw( int* p_msg_length, GLFWwindow* window ) {
   read_bytes_down( p_tx_pixels, pixels_size, p_msg_length);
 
   // set the texture onto the graphics card
-//  if ( pthread_rwlock_wrlock(&p_window_data->context.gl_lock) == 0 ) {
-    glBindTexture(GL_TEXTURE_2D, tx_id);
 
-    // https://www.opengl.org/discussion_boards/showthread.php/140246-texture-not-showing
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+  glBindTexture(GL_TEXTURE_2D, tx_id);
 
-    // the data is tightly packed
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
-    glPixelStorei(GL_UNPACK_SKIP_PIXELS, 0);
-    glPixelStorei(GL_UNPACK_SKIP_ROWS, 0);
+  // https://www.opengl.org/discussion_boards/showthread.php/140246-texture-not-showing
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
-    // set the texture into place
-    glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, p_tx_pixels);
+  // the data is tightly packed
+  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+  glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+  glPixelStorei(GL_UNPACK_SKIP_PIXELS, 0);
+  glPixelStorei(GL_UNPACK_SKIP_ROWS, 0);
 
-    if ( p_window_data->context.glew_ok ) {
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, log2(width));
-      glGenerateMipmap( GL_TEXTURE_2D );
-    }
+  // set the texture into place
+  glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, p_tx_pixels);
 
-    glBindTexture(GL_TEXTURE_2D, 0);
-    
-    // unlock
-//    pthread_rwlock_unlock(&p_window_data->context.gl_lock);
-//  };
+  if ( p_window_data->context.glew_ok ) {
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, log2(width));
+    glGenerateMipmap( GL_TEXTURE_2D );
+  }
+
+  glBindTexture(GL_TEXTURE_2D, 0);
 
   // cleanup
   free( p_tx_pixels );

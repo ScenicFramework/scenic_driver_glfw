@@ -83,10 +83,6 @@ static tx_id_t* delete_tx_id(tx_id_t* p_tx_ids, char* p_key) {
 
 //=============================================================================
 
-
-
-
-
 //---------------------------------------------------------
 void receive_put_tx_blob( int* p_msg_length, GLFWwindow* window ) {
   window_data_t*  p_data = glfwGetWindowUserPointer( window );
@@ -116,18 +112,6 @@ void receive_put_tx_blob( int* p_msg_length, GLFWwindow* window ) {
   // store the key/id pair
   int old_id;
   p_data->p_tx_ids = put_tx_id( p_data->p_tx_ids, p_key, key_size, id, &old_id );
-
-// char buff[200];
-// sprintf(buff, "TX create id: %d -> %p", id, p_data->p_tx_ids);
-// send_puts(buff);
-// if (old_id >= 0) {
-// sprintf(buff, "OLD ID: %d", old_id);
-// send_puts(buff);
-// }
-
-// int confirm = get_tx_id(p_data->p_tx_ids, p_key);
-// sprintf(buff, "confirm: %d", confirm);
-// send_puts(buff);
 
   free(p_key);
   free(p_tx_file);

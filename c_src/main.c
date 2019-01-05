@@ -9,7 +9,6 @@
 #include <string.h>
 #include <stdbool.h>
 #include <poll.h>
-// #include <pthread.h>
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -58,33 +57,17 @@ void reshape_framebuffer(GLFWwindow* window, int w, int h) {
 
   p_data->context.frame_width = w;
   p_data->context.frame_height = h;
-
-  // if ( pthread_rwlock_rdlock(&p_data->context.gl_lock) == 0 ) {
-  // record the framebuffer to window size ratios
-  // this will be used for things like oversampling fonts
- //    p_data->context.frame_ratio.x = p_data->context.frame_width / p_data->context.window_width;
- //    p_data->context.frame_ratio.y = p_data->context.frame_height / p_data->context.window_height;
-
-    // p_data->redraw = true;
 }
 
 //---------------------------------------------------------
 void reshape_window( GLFWwindow* window, int w, int h) {
   window_data_t*  p_data = glfwGetWindowUserPointer( window );
 
- // char buff[200];
- // sprintf(buff, "reshape_window, ww: %d, wh: %d", w, h);
- // send_puts(buff);
- // sprintf(buff, "                fw: %d, fh: %d",
- //  p_data->context.frame_width, p_data->context.frame_height);
- // send_puts(buff);
-
   // calculate the framebuffer to window size ratios
   // this will be used for things like oversampling fonts
   p_data->context.window_width = w;
   p_data->context.window_height = h;
 
-  // if ( pthread_rwlock_rdlock(&p_data->context.gl_lock) == 0 ) {
   p_data->context.frame_ratio.x = (float)p_data->context.frame_width / (float)p_data->context.window_width;
   p_data->context.frame_ratio.y = (float)p_data->context.frame_height / (float)p_data->context.window_height;
 
@@ -92,16 +75,6 @@ void reshape_window( GLFWwindow* window, int w, int h) {
     p_data->context.window_width, p_data->context.window_height,
     w, h
   );
-
- // sprintf(buff, "                rw: %f, rh: %f",
- //  p_data->context.frame_ratio.x, p_data->context.frame_ratio.y);
- // send_puts(buff);
-
-
- // char buff[200];
- // sprintf(buff, "reshape_window, w: %d, h: %d, rx: %f, ry: %f",
- //  w, h, p_data->context.frame_ratio.x, p_data->context.frame_ratio.y);
- // send_puts(buff);
 
   p_data->redraw = true;
 }
@@ -135,7 +108,7 @@ static void cursor_pos_callback(GLFWwindow* window, double xpos, double ypos)
     y = ypos;
     // only send the message if the postion changed
     if ( (p_data->last_x != x) || (p_data->last_y != y) ) {
-      send_cursor_pos(x, y);   
+      send_cursor_pos(x, y);
       p_data->last_x = x;
       p_data->last_y = y;
     }
@@ -194,23 +167,12 @@ void set_window_hints( const char* resizable ) {
     glfwWindowHint(GLFW_RESIZABLE, false);
   }
 
-  // GLFW_DECORATED flags all window decoration such as the close
-  // widget, border, move bar, etc
-  // glfwWindowHint(GLFW_DECORATED, false);
-
   // claim the focus right on creation
   glfwWindowHint(GLFW_FOCUSED, true);
 
   // we want OpenGL 2.1
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
-
-
-  // turn on anti-aliasing
-  // glfwWindowHint(GLFW_SAMPLES, 4);
-
-  // turn on stencil buffer
-  // glfwWindowHint(GLFW_STENCIL_BITS, 1);
 }
 
 //---------------------------------------------------------
@@ -222,7 +184,7 @@ void setup_window( GLFWwindow* window, int width, int height, int num_scripts ) 
   p_data = malloc( sizeof(window_data_t) );
   memset( p_data, 0, sizeof(window_data_t) );
   p_data->p_scripts = NULL;
-  
+
   p_data->keep_going = true;
 
   p_data->input_flags = 0xFFFF;
@@ -238,17 +200,13 @@ void setup_window( GLFWwindow* window, int width, int height, int num_scripts ) 
 
   p_data->context.glew_ok = false;
 
-  // pthread_rwlock_init(&p_data->context.gl_lock, NULL);
-
   glfwSetWindowUserPointer( window, p_data );
 
-  // Make the window's context current 
+  // Make the window's context current
   glfwMakeContextCurrent(window);
-  // glfwSwapInterval(1);
 
   // initialize glew - do after setting up window and making current
   p_data->context.glew_ok = glewInit() == GLEW_OK;
-
 
   // get the actual framebuffer size to set it up
   int frame_width, frame_height;
@@ -257,7 +215,7 @@ void setup_window( GLFWwindow* window, int width, int height, int num_scripts ) 
 
   // get the actual window size to set it up
   int window_width, window_height;
-  glfwGetWindowSize( window, &window_width, &window_height ); 
+  glfwGetWindowSize( window, &window_width, &window_height );
   reshape_window(window, window_width, window_height);
 
   p_data->context.p_ctx = nvgCreateGL2(NVG_ANTIALIAS | NVG_STENCIL_STROKES | NVG_DEBUG);
@@ -302,33 +260,21 @@ void cleanup_window( GLFWwindow* window ) {
 // business. If it closes, then return false
 // http://pubs.opengroup.org/onlinepubs/7908799/xsh/poll.html
 // see https://stackoverflow.com/questions/25147181/pollhup-vs-pollnval-or-what-is-pollhup
-bool isCallerDown() 
+bool isCallerDown()
 {
     struct pollfd ufd;
     memset(&ufd, 0, sizeof ufd);
     ufd.fd = STDIN_FILENO;
     ufd.events = POLLIN;
-    if ( poll(&ufd, 1, 0) < 0 ) 
+    if ( poll(&ufd, 1, 0) < 0 )
         return true;
     return ufd.revents & POLLHUP;
 }
-
-
-// //---------------------------------------------------------
-// pthread_t start_comms_thread( GLFWwindow* window ) {
-//   pthread_t pthread;
-//   if ( pthread_create(&pthread, NULL, comms_thread, (void*)window) != 0 ) { return 0; }
-//   return pthread;
-// }
-
 
 //---------------------------------------------------------
 int main(int argc, char **argv) {
   GLFWwindow*     window;
   GLuint          root_dl_id;
-
-// char buff[200];
-
 
   test_endian();
 
@@ -346,9 +292,6 @@ int main(int argc, char **argv) {
   // argv[5] is the space to allocate for lists
   // becoming obsolete
   int dl_block_size = atoi(argv[5]);
-
-
-  // send_puts( "in glfw");
 
   /* Initialize the library */
   if (!glfwInit()) {return -1;}
@@ -371,17 +314,6 @@ int main(int argc, char **argv) {
   setup_window( window, width, height, dl_block_size );
   window_data_t*  p_data = glfwGetWindowUserPointer( window );
 
-  // start listening for commands from the calling app
-  // start_comms_thread( window );
-
-  // put stdio into non-blocking mode
-  // int flags = fcntl(0, F_GETFL, 0);
-  // fcntl(0, F_SETFL, flags | O_NONBLOCK);
-
-
-  // signal the app that the window is ready
-  // send_ready( p_data->context.empty_dl );
-
 #ifdef __APPLE__
   // heinous hack to get around macOS Mojave GL issues
   // without this, the window is blank until manually resized
@@ -394,13 +326,9 @@ int main(int argc, char **argv) {
 
   /* Loop until the calling app closes the window */
   while ( p_data->keep_going && !isCallerDown() ) {
-
-    // // check for incoming messages - blocks with a timeout
+    // check for incoming messages - blocks with a timeout
     if ( p_data->redraw || handle_stdio_in(window) ) {
       p_data->redraw = false;
-
-      // sprintf(buff, "---------- Start frame root: %d", p_data->root_script);
-      // send_puts(buff);
 
       // clear the buffer
       glClear(GL_COLOR_BUFFER_BIT);
@@ -419,20 +347,9 @@ int main(int argc, char **argv) {
       glfwSwapBuffers(window);
     }
 
-    // wait for events - timeout is in seconds
-    // the timeout is the max time the app will stay alive
-    // after the host BEAM environment shuts down.
-    // glfwWaitEventsTimeout(1.01f);
-
     // poll for events and return immediately
     glfwPollEvents();
   }
-
-  // one more lock just to make sure any running messages have a chance
-  // to complete before tearing down the graphics environment.
-  // if ( pthread_rwlock_rdlock(&p_data->context.gl_lock) == 0 ) {
-  //   pthread_rwlock_unlock(&p_data->context.gl_lock);
-  // }
 
   // clean up
   cleanup_window( window );

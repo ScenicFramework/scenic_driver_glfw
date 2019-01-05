@@ -5,14 +5,12 @@
 
 functions to play a compiled render script
 */
-
   #include <stdio.h>
-  // #include <string.h>
   #include <math.h>
 
   #include <stdlib.h>
   #include <GLFW/glfw3.h>
-  // #include <GLES2/gl2.h>
+
 
   #include "nanovg/nanovg.h"
   #include "types.h"
@@ -55,7 +53,7 @@ functions to play a compiled render script
 
   // PATH OPERATIONS
   #define OP_PATH_BEGIN              0X20
-  
+
   #define OP_PATH_MOVE_TO            0X21
   #define OP_PATH_LINE_TO            0X22
   #define OP_PATH_BEZIER_TO          0X23
@@ -63,10 +61,10 @@ functions to play a compiled render script
   #define OP_PATH_ARC_TO             0X25
   #define OP_PATH_CLOSE              0X26
   #define OP_PATH_WINDING            0X27
-  
+
   #define OP_FILL                    0X29
   #define OP_STROKE                  0X2A
-  
+
   #define OP_TRIANGLE                0X2C
   #define OP_ARC                     0X2D
   #define OP_RECT                    0X2E
@@ -134,7 +132,7 @@ void* get_script( window_data_t* p_data, GLuint id ) {
 //=============================================================================
 // types
 
-typedef struct __attribute__((__packed__)) 
+typedef struct __attribute__((__packed__))
 {
   GLuint      r;
   GLuint      g;
@@ -142,13 +140,13 @@ typedef struct __attribute__((__packed__))
   GLuint      a;
 } color_t;
 
-typedef struct __attribute__((__packed__)) 
+typedef struct __attribute__((__packed__))
 {
   GLfloat     x;
   GLfloat     y;
 } xy_t;
 
-typedef struct __attribute__((__packed__)) 
+typedef struct __attribute__((__packed__))
 {
   GLfloat     x;
   GLfloat     y;
@@ -156,20 +154,20 @@ typedef struct __attribute__((__packed__))
   GLfloat     h;
 } xywh_t;
 
-typedef struct __attribute__((__packed__)) 
+typedef struct __attribute__((__packed__))
 {
   GLfloat     w;
   GLfloat     h;
 } wh_t;
 
-typedef struct __attribute__((__packed__)) 
+typedef struct __attribute__((__packed__))
 {
   GLfloat     w;
   GLfloat     h;
   GLfloat     r;
 } whr_t;
 
-typedef struct __attribute__((__packed__)) 
+typedef struct __attribute__((__packed__))
 {
   GLfloat     c1x;
   GLfloat     c1y;
@@ -179,7 +177,7 @@ typedef struct __attribute__((__packed__))
   GLfloat     y;
 } bezier_to_t;
 
-typedef struct __attribute__((__packed__)) 
+typedef struct __attribute__((__packed__))
 {
   GLfloat     cx;
   GLfloat     cy;
@@ -187,7 +185,7 @@ typedef struct __attribute__((__packed__))
   GLfloat     y;
 } quadratic_to_t;
 
-typedef struct __attribute__((__packed__)) 
+typedef struct __attribute__((__packed__))
 {
   GLfloat     x1;
   GLfloat     y1;
@@ -196,35 +194,25 @@ typedef struct __attribute__((__packed__))
   GLfloat     radius;
 } arc_to_t;
 
-// typedef struct __attribute__((__packed__)) 
-// {
-//   GLfloat     cx;
-//   GLfloat     cy;
-//   GLfloat     radius;
-//   GLfloat     a0;
-//   GLfloat     a1;
-//   byte        direction;
-// } arc_t;
-
-typedef struct __attribute__((__packed__)) 
+typedef struct __attribute__((__packed__))
 {
   GLfloat     rx;
   GLfloat     ry;
 } ellipse_t;
 
-typedef struct __attribute__((__packed__)) 
+typedef struct __attribute__((__packed__))
 {
   GLfloat     r;
 } circle_t;
 
-typedef struct __attribute__((__packed__)) 
+typedef struct __attribute__((__packed__))
 {
   GLfloat     radius;
   GLfloat     start;
   GLfloat     finish;
 } arc_sector_t;
 
-typedef struct __attribute__((__packed__)) 
+typedef struct __attribute__((__packed__))
 {
   GLfloat     a;
   GLfloat     b;
@@ -234,7 +222,7 @@ typedef struct __attribute__((__packed__))
   GLfloat     f;
 } matrix_t;
 
-typedef struct __attribute__((__packed__)) 
+typedef struct __attribute__((__packed__))
 {
   GLfloat     x0;
   GLfloat     y0;
@@ -244,7 +232,7 @@ typedef struct __attribute__((__packed__))
   GLfloat     y2;
 } triangle_t;
 
-typedef struct __attribute__((__packed__)) 
+typedef struct __attribute__((__packed__))
 {
   GLfloat     sx;
   GLfloat     sy;
@@ -260,7 +248,7 @@ typedef struct __attribute__((__packed__))
   GLuint      ea;
 } linear_gradient_t;
 
-typedef struct __attribute__((__packed__)) 
+typedef struct __attribute__((__packed__))
 {
   GLfloat     x;
   GLfloat     y;
@@ -278,7 +266,7 @@ typedef struct __attribute__((__packed__))
   GLuint      ea;
 } box_gradient_t;
 
-typedef struct __attribute__((__packed__)) 
+typedef struct __attribute__((__packed__))
 {
   GLfloat     cx;
   GLfloat     cy;
@@ -294,7 +282,7 @@ typedef struct __attribute__((__packed__))
   GLuint      ea;
 } radial_gradient_t;
 
-typedef struct __attribute__((__packed__)) 
+typedef struct __attribute__((__packed__))
 {
   GLfloat     ox;
   GLfloat     oy;
@@ -305,7 +293,7 @@ typedef struct __attribute__((__packed__))
   GLuint      key_size;
 } image_pattern_t;
 
-typedef struct __attribute__((__packed__)) 
+typedef struct __attribute__((__packed__))
 {
   GLuint      size;
 } text_t;
@@ -317,9 +305,6 @@ typedef struct __attribute__((__packed__))
 // run script
 void* internal_run_script( void* p_script, window_data_t* p_data ) {
   GLuint id = *(GLuint*)p_script;
-  // char buff[200];
-  // sprintf(buff, "run_script %d", id);
-  // send_puts( buff );
   run_script( id, p_data );
   return p_script + sizeof(GLuint);
 }
@@ -331,12 +316,12 @@ void* paint_linear( NVGcontext* p_ctx, void* p_script ) {
   linear_gradient_t* grad = (linear_gradient_t*)p_script;
 
   current_paint = nvgLinearGradient(
-    p_ctx, 
+    p_ctx,
     grad->sx, grad->sy, grad->ex, grad->ey,
     nvgRGBA(grad->sr, grad->sg, grad->sb, grad->sa),
     nvgRGBA(grad->er, grad->eg, grad->eb, grad->ea)
     );
-  
+
   return p_script + sizeof(linear_gradient_t);
 }
 
@@ -344,13 +329,13 @@ void* paint_box( NVGcontext* p_ctx, void* p_script ) {
   box_gradient_t* grad = (box_gradient_t*)p_script;
 
   current_paint = nvgBoxGradient(
-    p_ctx, 
+    p_ctx,
     grad->x, grad->y, grad->w, grad->h,
     grad->radius, grad->feather,
     nvgRGBA(grad->sr, grad->sg, grad->sb, grad->sa),
     nvgRGBA(grad->er, grad->eg, grad->eb, grad->ea)
     );
-  
+
   return p_script + sizeof(box_gradient_t);
 }
 
@@ -358,12 +343,12 @@ void* paint_radial( NVGcontext* p_ctx, void* p_script ) {
   radial_gradient_t* grad = (radial_gradient_t*)p_script;
 
   current_paint = nvgRadialGradient(
-    p_ctx, 
+    p_ctx,
     grad->cx, grad->cy, grad->r_in, grad->r_out,
     nvgRGBA(grad->sr, grad->sg, grad->sb, grad->sa),
     nvgRGBA(grad->er, grad->eg, grad->eb, grad->ea)
     );
-  
+
   return p_script + sizeof(radial_gradient_t);
 }
 
@@ -396,7 +381,7 @@ void* paint_image( NVGcontext* p_ctx, void* p_script, window_data_t* p_data ) {
 
     // the id is loaded and found
     current_paint = nvgImagePattern(
-      p_ctx, 
+      p_ctx,
       ox, oy, ex, ey,
       img->angle, id, alpha
     );
@@ -618,7 +603,7 @@ void* sector( NVGcontext* p_ctx, void* p_script ) {
       nvgLineTo(p_ctx, px, py);
       a += increment ;
     }
-    nvgClosePath(p_ctx);    
+    nvgClosePath(p_ctx);
   }
 
   return p_script + sizeof(arc_sector_t);
@@ -651,22 +636,8 @@ void* text( NVGcontext* p_ctx, void* p_script ) {
   return p_script + text_info->size;
 }
 
-
-
-// typedef struct __attribute__((__packed__)) 
-// {
-//   GLfloat     x;
-//   GLfloat     y;
-//   GLuint      size;
-// } text_t;
-
-
-
-
 //---------------------------------------------------------
 // transforms
-
-
 void* tx_rotate( NVGcontext* p_ctx, void* p_script ) {
   nvgRotate(p_ctx, *(float*)p_script);
   return p_script + sizeof(float);
@@ -675,13 +646,13 @@ void* tx_rotate( NVGcontext* p_ctx, void* p_script ) {
 void* tx_translate( NVGcontext* p_ctx, void* p_script ) {
   xy_t* xy = (xy_t*)p_script;
   nvgTranslate(p_ctx, xy->x, xy->y);
-  return p_script + sizeof(xy_t);  
+  return p_script + sizeof(xy_t);
 }
 
 void* tx_scale( NVGcontext* p_ctx, void* p_script ) {
   xy_t* xy = (xy_t*)p_script;
   nvgScale(p_ctx, xy->x, xy->y);
-  return p_script + sizeof(xy_t);  
+  return p_script + sizeof(xy_t);
 }
 
 void* tx_skew_x( NVGcontext* p_ctx, void* p_script ) {
@@ -739,17 +710,12 @@ void* text_height( NVGcontext* p_ctx, void* p_script ) {
   return p_script + sizeof(float);
 }
 
-
-
 //=============================================================================
 // the main script function
 
 //---------------------------------------------------------
 void run_script( GLuint script_id, window_data_t* p_data ) {
   char buff[200];
-
-  // sprintf(buff, "script id: %d", script_id);
-  // send_puts(buff);
 
   // get the script in question. bail if it isn't there
   void* p_script = get_script( p_data, script_id );
@@ -768,8 +734,6 @@ void run_script( GLuint script_id, window_data_t* p_data ) {
   // loop though the script, running each command in turn.
   // recurse into more script calls if necessary
   while ( op != OP_TERMINATE ) {
-    // sprintf(buff, "op: 0x%X", op);
-    // send_puts(buff);
 
     // advance the pointer past the op code
     p_script += sizeof(GLuint);
@@ -856,7 +820,6 @@ void run_script( GLuint script_id, window_data_t* p_data ) {
       default:
         sprintf(buff, "!!!Unknown script command: %d", op);
         send_puts( buff );
-        // send_puts( "!!!Unknown script command" );
         return;
     }
 

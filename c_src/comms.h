@@ -12,13 +12,6 @@
 #include <stdbool.h>
 #endif
 
-/*#ifndef ASSET_CACHE
-#include "cache.h"
-#endif
-
-#include "types.h"
-*/
-
 bool read_bytes_down( void* p_buff, int bytes_to_read, int* p_bytes_to_remaining);
 
 // basic events to send up to the caller
