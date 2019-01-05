@@ -19,24 +19,28 @@ Functions to load textures onto the graphics card
 #define STBI_FAILURE_USERMSG
 #include "stb_image.h"
 
-GLenum translate_texture_format(int channels) {
-  switch (channels) {
-  case 1:
-    return GL_ALPHA;
-  case 2:
-    return GL_LUMINANCE_ALPHA;
-  case 3:
-    return GL_RGB;
-  case 4:
-    return GL_RGBA;
+GLenum translate_texture_format(int channels)
+{
+  switch (channels)
+  {
+    case 1:
+      return GL_ALPHA;
+    case 2:
+      return GL_LUMINANCE_ALPHA;
+    case 3:
+      return GL_RGB;
+    case 4:
+      return GL_RGBA;
   }
   return -1;
 }
 
 //---------------------------------------------------------
-void receive_put_tx_file(int *p_msg_length, GLFWwindow *window) {
-  window_data_t *p_window_data = glfwGetWindowUserPointer(window);
-  if (p_window_data == NULL) {
+void receive_put_tx_file(int* p_msg_length, GLFWwindow* window)
+{
+  window_data_t* p_window_data = glfwGetWindowUserPointer(window);
+  if (p_window_data == NULL)
+  {
     send_puts("receive_put_tx_file BAD WINDOW");
     return;
   }
@@ -48,12 +52,13 @@ void receive_put_tx_file(int *p_msg_length, GLFWwindow *window) {
   read_bytes_down(&file_size, sizeof(GLuint), p_msg_length);
 
   // Allocate and read the main data. Need to free from now on
-  void *p_tx_file = malloc(file_size);
+  void* p_tx_file = malloc(file_size);
   read_bytes_down(p_tx_file, file_size, p_msg_length);
 
   // get data about the image without parsing it first
   int x, y, comp;
-  if (stbi_info_from_memory(p_tx_file, file_size, &x, &y, &comp) != 1) {
+  if (stbi_info_from_memory(p_tx_file, file_size, &x, &y, &comp) != 1)
+  {
     send_puts("Unable to parse texture data");
     send_puts(stbi_failure_reason());
     free(p_tx_file);
@@ -61,11 +66,12 @@ void receive_put_tx_file(int *p_msg_length, GLFWwindow *window) {
   }
 
   // interpret the image data
-  stbi_uc *p_img;
+  stbi_uc* p_img;
   int      actual_channels;
   p_img = stbi_load_from_memory(p_tx_file, file_size, &x, &y, &actual_channels,
                                 comp);
-  if (p_img == NULL) {
+  if (p_img == NULL)
+  {
     send_puts("Unable to parse texture data");
     send_puts(stbi_failure_reason());
     free(p_tx_file);
@@ -95,7 +101,8 @@ void receive_put_tx_file(int *p_msg_length, GLFWwindow *window) {
   glTexImage2D(GL_TEXTURE_2D, 0, format, x, y, 0, format, GL_UNSIGNED_BYTE,
                p_img);
 
-  if (p_window_data->context.glew_ok) {
+  if (p_window_data->context.glew_ok)
+  {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, log2(x));
     glGenerateMipmap(GL_TEXTURE_2D);
   }
@@ -103,7 +110,8 @@ void receive_put_tx_file(int *p_msg_length, GLFWwindow *window) {
   glBindTexture(GL_TEXTURE_2D, 0);
 
   // check if there was a gl error
-  if (glGetError() != GL_NO_ERROR) {
+  if (glGetError() != GL_NO_ERROR)
+  {
     send_puts("GL error while setting texture");
   }
 
@@ -116,9 +124,11 @@ void receive_put_tx_file(int *p_msg_length, GLFWwindow *window) {
 }
 
 //---------------------------------------------------------
-void receive_put_tx_raw(int *p_msg_length, GLFWwindow *window) {
-  window_data_t *p_window_data = glfwGetWindowUserPointer(window);
-  if (p_window_data == NULL) {
+void receive_put_tx_raw(int* p_msg_length, GLFWwindow* window)
+{
+  window_data_t* p_window_data = glfwGetWindowUserPointer(window);
+  if (p_window_data == NULL)
+  {
     send_puts("receive_put_tx_raw BAD WINDOW");
     return;
   }
@@ -137,13 +147,14 @@ void receive_put_tx_raw(int *p_msg_length, GLFWwindow *window) {
   GLenum format = translate_texture_format(channels);
 
   // sanity check the incoming data
-  if (width * height * channels != pixels_size) {
+  if (width * height * channels != pixels_size)
+  {
     send_puts("receive_put_tx_raw INVALID PIXEL SIZE!");
     return;
   }
 
   // Allocate and read the pixel data. Need to free from now on
-  void *p_tx_pixels = malloc(pixels_size);
+  void* p_tx_pixels = malloc(pixels_size);
   read_bytes_down(p_tx_pixels, pixels_size, p_msg_length);
 
   // set the texture onto the graphics card
@@ -167,7 +178,8 @@ void receive_put_tx_raw(int *p_msg_length, GLFWwindow *window) {
   glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format,
                GL_UNSIGNED_BYTE, p_tx_pixels);
 
-  if (p_window_data->context.glew_ok) {
+  if (p_window_data->context.glew_ok)
+  {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, log2(width));
     glGenerateMipmap(GL_TEXTURE_2D);
   }

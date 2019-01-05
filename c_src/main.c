@@ -36,7 +36,8 @@
 //=============================================================================
 // window callbacks
 
-void errorcb(int error, const char *desc) {
+void errorcb(int error, const char* desc)
+{
   char buff[200];
   sprintf(buff, "GLFW error %d: %s\n", error, desc);
   send_puts(buff);
@@ -45,26 +46,28 @@ void errorcb(int error, const char *desc) {
 void render_frame() {}
 
 //---------------------------------------------------------
-void reshape_framebuffer(GLFWwindow *window, int w, int h) {
-  window_data_t *p_data = glfwGetWindowUserPointer(window);
+void reshape_framebuffer(GLFWwindow* window, int w, int h)
+{
+  window_data_t* p_data = glfwGetWindowUserPointer(window);
 
   p_data->context.frame_width  = w;
   p_data->context.frame_height = h;
 }
 
 //---------------------------------------------------------
-void reshape_window(GLFWwindow *window, int w, int h) {
-  window_data_t *p_data = glfwGetWindowUserPointer(window);
+void reshape_window(GLFWwindow* window, int w, int h)
+{
+  window_data_t* p_data = glfwGetWindowUserPointer(window);
 
   // calculate the framebuffer to window size ratios
   // this will be used for things like oversampling fonts
   p_data->context.window_width  = w;
   p_data->context.window_height = h;
 
-  p_data->context.frame_ratio.x =
-      (float)p_data->context.frame_width / (float)p_data->context.window_width;
-  p_data->context.frame_ratio.y = (float)p_data->context.frame_height /
-                                  (float)p_data->context.window_height;
+  p_data->context.frame_ratio.x = (float) p_data->context.frame_width /
+                                  (float) p_data->context.window_width;
+  p_data->context.frame_ratio.y = (float) p_data->context.frame_height /
+                                  (float) p_data->context.window_height;
 
   send_reshape(p_data->context.window_width, p_data->context.window_height, w,
                h);
@@ -73,31 +76,38 @@ void reshape_window(GLFWwindow *window, int w, int h) {
 }
 
 //---------------------------------------------------------
-void key_callback(GLFWwindow *window, int key, int scancode, int action,
-                  int mods) {
-  window_data_t *p_data = glfwGetWindowUserPointer(window);
-  if (p_data->input_flags & MSG_KEY_MASK) {
+void key_callback(GLFWwindow* window, int key, int scancode, int action,
+                  int mods)
+{
+  window_data_t* p_data = glfwGetWindowUserPointer(window);
+  if (p_data->input_flags & MSG_KEY_MASK)
+  {
     send_key(key, scancode, action, mods);
   }
 }
 
 //---------------------------------------------------------
-void charmods_callback(GLFWwindow *window, unsigned int codepoint, int mods) {
-  window_data_t *p_data = glfwGetWindowUserPointer(window);
-  if (p_data->input_flags & MSG_CHAR_MASK) {
+void charmods_callback(GLFWwindow* window, unsigned int codepoint, int mods)
+{
+  window_data_t* p_data = glfwGetWindowUserPointer(window);
+  if (p_data->input_flags & MSG_CHAR_MASK)
+  {
     send_codepoint(codepoint, mods);
   }
 }
 
 //---------------------------------------------------------
-static void cursor_pos_callback(GLFWwindow *window, double xpos, double ypos) {
+static void cursor_pos_callback(GLFWwindow* window, double xpos, double ypos)
+{
   float          x, y;
-  window_data_t *p_data = glfwGetWindowUserPointer(window);
-  if (p_data->input_flags & MSG_MOUSE_MOVE_MASK || true) {
+  window_data_t* p_data = glfwGetWindowUserPointer(window);
+  if (p_data->input_flags & MSG_MOUSE_MOVE_MASK || true)
+  {
     x = xpos;
     y = ypos;
     // only send the message if the postion changed
-    if ((p_data->last_x != x) || (p_data->last_y != y)) {
+    if ((p_data->last_x != x) || (p_data->last_y != y))
+    {
       send_cursor_pos(x, y);
       p_data->last_x = x;
       p_data->last_y = y;
@@ -106,37 +116,43 @@ static void cursor_pos_callback(GLFWwindow *window, double xpos, double ypos) {
 }
 
 //---------------------------------------------------------
-void mouse_button_callback(GLFWwindow *window, int button, int action,
-                           int mods) {
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
+{
   double         x, y;
-  window_data_t *p_data = glfwGetWindowUserPointer(window);
-  if (p_data->input_flags & MSG_MOUSE_BUTTON_MASK) {
+  window_data_t* p_data = glfwGetWindowUserPointer(window);
+  if (p_data->input_flags & MSG_MOUSE_BUTTON_MASK)
+  {
     glfwGetCursorPos(window, &x, &y);
     send_mouse_button(button, action, mods, x, y);
   }
 }
 
 //---------------------------------------------------------
-void scroll_callback(GLFWwindow *window, double xoffset, double yoffset) {
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
+{
   double         x, y;
-  window_data_t *p_data = glfwGetWindowUserPointer(window);
-  if (p_data->input_flags & MSG_MOUSE_SCROLL_MASK) {
+  window_data_t* p_data = glfwGetWindowUserPointer(window);
+  if (p_data->input_flags & MSG_MOUSE_SCROLL_MASK)
+  {
     glfwGetCursorPos(window, &x, &y);
     send_scroll(xoffset, yoffset, x, y);
   }
 }
 //---------------------------------------------------------
-void cursor_enter_callback(GLFWwindow *window, int entered) {
+void cursor_enter_callback(GLFWwindow* window, int entered)
+{
   double         x, y;
-  window_data_t *p_data = glfwGetWindowUserPointer(window);
-  if (p_data->input_flags & MSG_MOUSE_ENTER_MASK) {
+  window_data_t* p_data = glfwGetWindowUserPointer(window);
+  if (p_data->input_flags & MSG_MOUSE_ENTER_MASK)
+  {
     glfwGetCursorPos(window, &x, &y);
     send_cursor_enter(entered, x, y);
   }
 }
 
 //---------------------------------------------------------
-void window_close_callback(GLFWwindow *window) {
+void window_close_callback(GLFWwindow* window)
+{
   // let the calling app filter the close event. Send a message up.
   // if the app wants to let the window close, it needs to send a close back
   // down.
@@ -149,8 +165,10 @@ void window_close_callback(GLFWwindow *window) {
 
 //---------------------------------------------------------
 // done before the window is created
-void set_window_hints(const char *resizable) {
-  if (strncmp(resizable, "true", 4) != 0) {
+void set_window_hints(const char* resizable)
+{
+  if (strncmp(resizable, "true", 4) != 0)
+  {
     // don't let the user resize the window
     glfwWindowHint(GLFW_RESIZABLE, false);
   }
@@ -165,8 +183,9 @@ void set_window_hints(const char *resizable) {
 
 //---------------------------------------------------------
 // set up one-time features of the window
-void setup_window(GLFWwindow *window, int width, int height, int num_scripts) {
-  window_data_t *p_data;
+void setup_window(GLFWwindow* window, int width, int height, int num_scripts)
+{
+  window_data_t* p_data;
 
   // set up the window's private data
   p_data = malloc(sizeof(window_data_t));
@@ -208,7 +227,8 @@ void setup_window(GLFWwindow *window, int width, int height, int num_scripts) {
 
   p_data->context.p_ctx =
       nvgCreateGL2(NVG_ANTIALIAS | NVG_STENCIL_STROKES | NVG_DEBUG);
-  if (p_data->context.p_ctx == NULL) {
+  if (p_data->context.p_ctx == NULL)
+  {
     send_puts("Could not init nanovg!!!");
     return;
   }
@@ -225,8 +245,8 @@ void setup_window(GLFWwindow *window, int width, int height, int num_scripts) {
   glfwSetWindowCloseCallback(window, window_close_callback);
 
   // set up the scripts table
-  p_data->p_scripts = malloc(sizeof(void *) * num_scripts);
-  memset(p_data->p_scripts, 0, sizeof(void *) * num_scripts);
+  p_data->p_scripts = malloc(sizeof(void*) * num_scripts);
+  memset(p_data->p_scripts, 0, sizeof(void*) * num_scripts);
   p_data->num_scripts = num_scripts;
 
   // set the initial clear color
@@ -238,7 +258,8 @@ void setup_window(GLFWwindow *window, int width, int height, int num_scripts) {
 
 //---------------------------------------------------------
 // tear down one-time features of the window
-void cleanup_window(GLFWwindow *window) {
+void cleanup_window(GLFWwindow* window)
+{
   // free the window's private data
   free(glfwGetWindowUserPointer(window));
 }
@@ -249,7 +270,8 @@ void cleanup_window(GLFWwindow *window) {
 // http://pubs.opengroup.org/onlinepubs/7908799/xsh/poll.html
 // see
 // https://stackoverflow.com/questions/25147181/pollhup-vs-pollnval-or-what-is-pollhup
-bool isCallerDown() {
+bool isCallerDown()
+{
   struct pollfd ufd;
   memset(&ufd, 0, sizeof ufd);
   ufd.fd     = STDIN_FILENO;
@@ -260,14 +282,16 @@ bool isCallerDown() {
 }
 
 //---------------------------------------------------------
-int main(int argc, char **argv) {
-  GLFWwindow *window;
+int main(int argc, char** argv)
+{
+  GLFWwindow* window;
   GLuint      root_dl_id;
 
   test_endian();
 
   // super simple arg check
-  if (argc != 6) {
+  if (argc != 6)
+  {
     printf("\r\nscenic_driver_glfw should be launched via the "
            "Scenic.Driver.Glfw library.\r\n\r\n");
     return 0;
@@ -282,7 +306,8 @@ int main(int argc, char **argv) {
   int dl_block_size = atoi(argv[5]);
 
   /* Initialize the library */
-  if (!glfwInit()) {
+  if (!glfwInit())
+  {
     return -1;
   }
   glfwSetErrorCallback(errorcb);
@@ -294,14 +319,15 @@ int main(int argc, char **argv) {
   /* Create a windowed mode window and its OpenGL context */
   // argv[3] is the window title
   window = glfwCreateWindow(width, height, argv[3], NULL, NULL);
-  if (!window) {
+  if (!window)
+  {
     glfwTerminate();
     return -1;
   }
 
   // set up one-time features of the window
   setup_window(window, width, height, dl_block_size);
-  window_data_t *p_data = glfwGetWindowUserPointer(window);
+  window_data_t* p_data = glfwGetWindowUserPointer(window);
 
 #ifdef __APPLE__
   // heinous hack to get around macOS Mojave GL issues
@@ -314,9 +340,11 @@ int main(int argc, char **argv) {
 #endif
 
   /* Loop until the calling app closes the window */
-  while (p_data->keep_going && !isCallerDown()) {
+  while (p_data->keep_going && !isCallerDown())
+  {
     // check for incoming messages - blocks with a timeout
-    if (p_data->redraw || handle_stdio_in(window)) {
+    if (p_data->redraw || handle_stdio_in(window))
+    {
       p_data->redraw = false;
 
       // clear the buffer
@@ -325,7 +353,8 @@ int main(int argc, char **argv) {
       nvgBeginFrame(p_data->context.p_ctx, p_data->context.window_width,
                     p_data->context.window_height,
                     p_data->context.frame_ratio.x);
-      if (p_data->root_script >= 0) {
+      if (p_data->root_script >= 0)
+      {
         run_script(p_data->root_script, p_data);
       }
       nvgEndFrame(p_data->context.p_ctx);

@@ -11,16 +11,16 @@
 #include <stdbool.h>
 #endif
 
-bool read_bytes_down(void *p_buff, int bytes_to_read,
-                     int *p_bytes_to_remaining);
+bool read_bytes_down(void* p_buff, int bytes_to_read,
+                     int* p_bytes_to_remaining);
 
 // basic events to send up to the caller
-void send_puts(const char *msg);
-void send_write(const char *msg);
-void send_inspect(void *data, int length);
+void send_puts(const char* msg);
+void send_write(const char* msg);
+void send_inspect(void* data, int length);
 
-void send_cache_miss(const char *key);
-void send_font_miss(const char *key);
+void send_cache_miss(const char* key);
+void send_font_miss(const char* key);
 void send_reshape(int window_width, int window_height, int frame_width,
                   int frame_height);
 void send_key(int key, int scancode, int action, int mods);
@@ -34,10 +34,10 @@ void send_close();
 void send_ready(int root_id);
 void send_draw_ready(unsigned int id);
 
-void *comms_thread(void *window);
+void* comms_thread(void* window);
 
 void test_endian();
 
-bool handle_stdio_in(GLFWwindow *window);
+bool handle_stdio_in(GLFWwindow* window);
 
 #endif
