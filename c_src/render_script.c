@@ -648,7 +648,8 @@ void* text( NVGcontext* p_ctx, void* p_script ) {
     start = rows[nrows-1].next;
   }
 
-  return p_script + text_info->size;
+  // Text is padded to 32-bits
+  return p_script + ((text_info->size + 3) & ~3);
 }
 
 
