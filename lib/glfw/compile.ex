@@ -1004,15 +1004,15 @@ defmodule Scenic.Driver.Glfw.Compile do
   end
 
   defp op_text(ops, text) do
-    text_size = byte_size(text) + 1
+    text_size = byte_size(text)
 
     # keep everything aligned on 4 byte boundaries
-    {text_size, extra_buffer} =
-      case 4 - rem(text_size, 4) do
-        1 -> {text_size + 1, <<0::size(8)>>}
-        2 -> {text_size + 2, <<0::size(16)>>}
-        3 -> {text_size + 3, <<0::size(24)>>}
-        _ -> {text_size, <<>>}
+    padding_size =
+      case rem(text_size, 4) do
+        0 -> 0
+        1 -> 24
+        2 -> 16
+        3 -> 8
       end
 
     [
@@ -1020,9 +1020,7 @@ defmodule Scenic.Driver.Glfw.Compile do
         @op_text::unsigned-integer-size(32)-native,
         text_size::unsigned-integer-size(32)-native,
         text::binary,
-        # null terminate the string so it can be used directly
-        0::size(8),
-        extra_buffer::binary
+        0::size(padding_size)
       >>
       | ops
     ]
