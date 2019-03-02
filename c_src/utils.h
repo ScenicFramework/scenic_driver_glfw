@@ -6,4 +6,9 @@
 Functions to load fonts and render text
 */
 
-void check_gl_error( char* msg );
+#ifndef _UTILS_H
+#define _UTILS_H
+
+void check_gl_error(char* msg);
+
+#endif
