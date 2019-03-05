@@ -1,3 +1,7 @@
+### 0.10.0
+* cleanup code from @cretel
+* update stb_truetype and stb_image to latest
+
 ### 0.8.1
 * Add hack on macOS Mojave to get around GL bugs
 
