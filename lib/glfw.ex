@@ -79,8 +79,8 @@ defmodule Scenic.Driver.Glfw do
       to_charlist(" #{width} #{height} #{inspect(title)} #{resizeable} #{dl_block_size}")
 
     # request put and delete notifications from the cache
-    Cache.subscribe(:cache_put)
-    Cache.subscribe(:cache_delete)
+    Cache.Static.Font.subscribe(:all)
+    Cache.Static.Texture.subscribe(:all)
     
     # open and initialize the window
     Process.flag(:trap_exit, true)

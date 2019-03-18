@@ -7,8 +7,6 @@ defmodule Scenic.Driver.GlfwTest do
   import Scenic.Primitives
   alias Scenic.Driver.Glfw
 
-  # import IEx
-
   @name :glfw_test
   @size {700, 600}
   @config %{
@@ -19,11 +17,16 @@ defmodule Scenic.Driver.GlfwTest do
 
   @triangle {{0, 260}, {250, 0}, {250, 260}}
 
-  @font_hash "o3FsNZ8jSxxunWBCLXtpVhTd06Q"
-  @font_path "test/static/Indie_Flower/IndieFlower.ttf"
+  @font_metrics_path "test/static/Indie_Flower/IndieFlower.ttf.metrics"
+  @font_metrics_hash "uSw4sot_mcOhsCsgfpS7lNAbEuI"
+  @font_hash "NsNzsium2eAAhVykbYK8Y_8lnjQI2TrmY1scTndk6DE"
+  @font_path "test/static/Indie_Flower"
 
   @parrot_hash "UfHCVlANI2cFbwSpJey64FxjT-0"
   @parrot_path "test/static/scenic_parrot.png"
+
+  @roboto_hash "eehRQEZX2sIQaz0irSVtR4JKmldlRY7bcskQKkWBbZU"
+  @roboto_mono_hash "x6stc899U4-s4IvN3pW5KM5gmpcCN8iBHKPHYFnIuy8"
 
   setup do
     %{}
@@ -59,11 +62,11 @@ defmodule Scenic.Driver.GlfwTest do
     graph_key = {:graph, scene_ref, nil}
 
     # load the parrot texture into the cache
-    Scenic.Cache.File.load(@parrot_path, @parrot_hash)
+    assert Scenic.Cache.Static.Texture.load(@parrot_hash, @parrot_path) == {:ok, @parrot_hash}
 
     # give the port time to spin up
     Process.sleep(1500)
-    Glfw.Cache.load_texture(@parrot_hash, state.port)
+    assert Glfw.Cache.load_static_texture(@parrot_hash, state.port) == true
 
     # clear
     Graph.build(clear_color: :green)
@@ -294,9 +297,9 @@ defmodule Scenic.Driver.GlfwTest do
     Process.sleep(40)
 
     # text
-    Glfw.Font.load_font(:roboto, state.port)
-    Glfw.Font.load_font(:roboto_mono, state.port)
-    Glfw.Font.load_font(:roboto_slab, state.port)
+    Glfw.Font.load_font(@roboto_hash, state.port)
+    Glfw.Font.load_font(@roboto_mono_hash, state.port)
+    # Glfw.Font.load_font(:roboto_slab, state.port)
 
     Graph.build(font: :roboto, font_size: 24)
     |> text("This is some text", fill: :yellow, translate: {200, 100})
@@ -307,14 +310,6 @@ defmodule Scenic.Driver.GlfwTest do
     Process.sleep(40)
 
     Graph.build(font: :roboto_mono, font_size: 30)
-    |> text("This is some text", fill: :yellow, translate: {200, 100})
-    |> test_push_graph(graph_key)
-
-    {:noreply, state} = Glfw.handle_cast({:update_graph, graph_key}, state)
-    state = %{state | pending_flush: false, dirty_graphs: []}
-    Process.sleep(40)
-
-    Graph.build(font: :roboto_slab, font_size: 40)
     |> text("This is some text", fill: :yellow, translate: {200, 100})
     |> test_push_graph(graph_key)
 
@@ -338,7 +333,7 @@ defmodule Scenic.Driver.GlfwTest do
     state = %{state | pending_flush: false, dirty_graphs: []}
     Process.sleep(40)
 
-    Graph.build(font: :roboto_slab, font_size: 40, font_blur: 2)
+    Graph.build(font: :roboto, font_size: 40, font_blur: 2)
     |> text("This is some text, blurred", fill: :yellow, translate: {200, 100})
     |> test_push_graph(graph_key)
 
@@ -347,16 +342,8 @@ defmodule Scenic.Driver.GlfwTest do
     Process.sleep(40)
 
     # custom font
-    Graph.build(font: :roboto_slab, font_size: 40, font_blur: 2)
-    |> text("blurred roboto_slab", fill: :yellow, translate: {200, 100})
-    |> test_push_graph(graph_key)
-
-    {:noreply, state} = Glfw.handle_cast({:update_graph, graph_key}, state)
-    state = %{state | pending_flush: false, dirty_graphs: []}
-    Process.sleep(40)
-
-    # custom font
-    assert Cache.File.load(@font_path, @font_hash) == {:ok, @font_hash}
+    assert Cache.Static.FontMetrics.load(@font_metrics_hash, @font_metrics_path) == {:ok, @font_metrics_hash}
+    assert Cache.Static.Font.load(@font_hash, @font_path) == {:ok, @font_hash}
     Glfw.Font.load_font(@font_hash, state.port)
 
     Graph.build(font: @font_hash, font_size: 60)

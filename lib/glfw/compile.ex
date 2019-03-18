@@ -27,8 +27,8 @@ defmodule Scenic.Driver.Glfw.Compile do
   @op_paint_box 0x07
   @op_paint_radial 0x08
   @op_paint_image 0x09
+  @op_paint_dynamic 0x0A
 
-  # @op_anti_alias              0x0A
 
   @op_stroke_width 0x0C
   @op_stroke_color 0x0D
@@ -135,6 +135,12 @@ defmodule Scenic.Driver.Glfw.Compile do
         |> op_paint_image(image, ox, oy, ex, ey, angle, alpha)
         |> op_fill_paint()
 
+      {:dynamic, {image, ox, oy, ex, ey, angle, alpha}} ->
+# IO.inspect(image, label: "dynamic")
+        ops
+        |> op_paint_dynamic(image, ox, oy, ex, ey, angle, alpha)
+        |> op_fill_paint()
+
       _ ->
         ops
     end
@@ -149,6 +155,11 @@ defmodule Scenic.Driver.Glfw.Compile do
       {:image, {image, ox, oy, ex, ey, angle, alpha}} ->
         ops
         |> op_paint_image(image, ox, oy, ex, ey, angle, alpha)
+        |> op_stroke_paint()
+
+      {:dynamic, {image, ox, oy, ex, ey, angle, alpha}} ->
+        ops
+        |> op_paint_dynamic(image, ox, oy, ex, ey, angle, alpha)
         |> op_stroke_paint()
 
       _ ->
@@ -624,6 +635,37 @@ defmodule Scenic.Driver.Glfw.Compile do
     ]
   end
 
+  defp op_paint_dynamic(ops, image, ox, oy, ex, ey, angle, alpha) do
+    name_size = byte_size(image) + 1
+    
+    # keep everything aligned on 4 byte boundaries
+    {name_size, extra_buffer} =
+      case 4 - rem(name_size, 4) do
+        1 -> {name_size + 1, <<0::size(8)>>}
+        2 -> {name_size + 2, <<0::size(16)>>}
+        3 -> {name_size + 3, <<0::size(24)>>}
+        _ -> {name_size, <<>>}
+      end
+
+    [
+      <<
+        @op_paint_dynamic::unsigned-integer-size(32)-native,
+        ox::float-size(32)-native,
+        oy::float-size(32)-native,
+        ex::float-size(32)-native,
+        ey::float-size(32)-native,
+        angle::float-size(32)-native,
+        alpha::unsigned-integer-size(32)-native,
+        name_size::unsigned-integer-size(32)-native,
+        image::binary,
+        # null terminate to it can be used directly
+        0::size(8),
+        extra_buffer::binary
+      >>
+      | ops
+    ]
+  end
+
   # --------------------------------------------------------
   # defp op_anti_alias(ops, true) do
   #   [ << @op_anti_alias :: size(8), 1 :: size(8) >> | ops]
@@ -746,7 +788,7 @@ defmodule Scenic.Driver.Glfw.Compile do
     ]
   end
 
-  defp op_font(ops, font) do
+  defp op_font(ops, {:true_type, font}) do
     font_name = to_string(font)
     name_size = byte_size(font_name) + 1
 

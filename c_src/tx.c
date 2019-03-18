@@ -134,6 +134,96 @@ void receive_put_tx_blob(int* p_msg_length, GLFWwindow* window)
 }
 
 //---------------------------------------------------------
+typedef struct __attribute__((__packed__))
+{
+  GLuint key_size;
+  GLuint pixel_size;
+  GLuint depth;
+  GLuint width;
+  GLuint height;
+} tx_pixels_t;
+
+void receive_put_tx_pixels(int* p_msg_length, GLFWwindow* window)
+{
+  window_data_t* p_data = glfwGetWindowUserPointer(window);
+  if (p_data == NULL)
+  {
+    send_puts("receive_put_tx_file BAD WINDOW");
+    return;
+  }
+  NVGcontext* p_ctx = p_data->context.p_ctx;
+
+  // read in the data from the stream
+  tx_pixels_t header;
+  read_bytes_down(&header, sizeof(tx_pixels_t), p_msg_length);
+  GLuint pixel_count = header.width * header.height;
+
+  // Allocate and read the key. Need to free from now on
+  char* p_key = malloc(header.key_size);
+  read_bytes_down(p_key, header.key_size, p_msg_length);
+
+  // Allocate and read the main data. Need to free from now on
+  unsigned char* p_tx_pixels = malloc(header.pixel_size);
+  read_bytes_down(p_tx_pixels, header.pixel_size, p_msg_length);
+
+  // expand the texture as appropriate depending on the depth
+  GLuint src_i;
+  GLuint dst_i;
+  unsigned char* p_tx_source = p_tx_pixels;
+  switch (header.depth)
+  {
+    case 4: // already good
+      break;
+    case 3:
+      p_tx_pixels = malloc(pixel_count * 4);
+      for( unsigned int i = 0; i < pixel_count; i++ ) {
+        dst_i = i * 4;
+        src_i = i * 3;
+        p_tx_pixels[dst_i] = p_tx_source[src_i];
+        p_tx_pixels[dst_i + 1] = p_tx_source[src_i + 1];
+        p_tx_pixels[dst_i + 2] = p_tx_source[src_i + 2];
+        p_tx_pixels[dst_i + 3] = 0xff;
+      }
+      free(p_tx_source);
+      break;
+    case 2:
+      p_tx_pixels = malloc(pixel_count * 4);
+      for( unsigned int i = 0; i < pixel_count; i++ ) {
+        dst_i = i * 4;
+        src_i = i * 2;
+        p_tx_pixels[dst_i] = p_tx_source[src_i];
+        p_tx_pixels[dst_i + 1] = p_tx_source[src_i];
+        p_tx_pixels[dst_i + 2] = p_tx_source[src_i];
+        p_tx_pixels[dst_i + 3] = p_tx_source[src_i + 1];
+      }
+      free(p_tx_source);
+      break;
+    case 1:
+      p_tx_pixels = malloc(pixel_count * 4);
+      for( unsigned int i = 0; i < pixel_count; i++ ) {
+        dst_i = i * 4;
+        p_tx_pixels[dst_i] = p_tx_source[i];
+        p_tx_pixels[dst_i + 1] = p_tx_source[i];
+        p_tx_pixels[dst_i + 2] = p_tx_source[i];
+        p_tx_pixels[dst_i + 3] = 0xff;
+      }
+      free(p_tx_source);
+      break;
+  }
+
+  // load the texture
+  int id = nvgCreateImageRGBA(p_ctx, header.width, header.height,
+    NVG_IMAGE_GENERATE_MIPMAPS, p_tx_pixels);
+
+  // store the key/id pair
+  int old_id;
+  p_data->p_tx_ids = put_tx_id(p_data->p_tx_ids, p_key, header.key_size, id, &old_id);
+
+  free(p_key);
+  free(p_tx_pixels);
+}
+
+//---------------------------------------------------------
 void receive_free_tx_id(int* p_msg_length, GLFWwindow* window)
 {
   window_data_t* p_data = glfwGetWindowUserPointer(window);
