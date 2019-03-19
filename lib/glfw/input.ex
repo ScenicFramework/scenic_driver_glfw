@@ -32,8 +32,9 @@ defmodule Scenic.Driver.Glfw.Input do
   @msg_mouse_button_id 0x0D
   @msg_mouse_scroll_id 0x0E
   @msg_cursor_enter_id 0x0F
-  #  @msg_drop_paths_id        0x10
-  @msg_cache_miss 0x20
+
+  @msg_static_texture_miss 0x20
+  @msg_dynamic_texture_miss 0x21
 
   @msg_font_miss 0x22
 
@@ -208,11 +209,24 @@ defmodule Scenic.Driver.Glfw.Input do
   # --------------------------------------------------------
   def handle_port_message(
         <<
-          @msg_cache_miss::unsigned-integer-size(32)-native
+          @msg_static_texture_miss::unsigned-integer-size(32)-native
         >> <> key,
         %{port: port} = state
       ) do
-    Cache.load_texture(key, port)
+    Scenic.Cache.Static.Texture.subscribe(key, :all)
+    Cache.load_static_texture(key, port)
+    {:noreply, state}
+  end
+
+  # --------------------------------------------------------
+  def handle_port_message(
+        <<
+          @msg_dynamic_texture_miss::unsigned-integer-size(32)-native
+        >> <> key,
+        %{port: port} = state
+      ) do
+    Scenic.Cache.Dynamic.Texture.subscribe(key, :all)
+    Cache.load_dynamic_texture(key, port)
     {:noreply, state}
   end
 

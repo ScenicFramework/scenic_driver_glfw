@@ -8,7 +8,8 @@
 #
 defmodule Scenic.Driver.Glfw.Cache do
   alias Scenic.Driver.Glfw
-  alias Scenic.Cache
+  alias Scenic.Cache.Static
+  alias Scenic.Cache.Dynamic
 
   # @msg_new_tx_id            0x31
 
@@ -16,18 +17,40 @@ defmodule Scenic.Driver.Glfw.Cache do
   @cmd_put_tx_file 0x34
   @cmd_put_tx_raw 0x35
 
-  #  import IEx
+  # import IEx
 
   # ============================================================================
 
   # --------------------------------------------------------
-  def handle_cast({:cache_put, key}, %{port: port, ready: true} = state) do
-    load_texture(key, port)
+  def handle_cast({Static.Texture, :put, key}, %{port: port, ready: true} = state) do
+    load_static_texture(key, port)
     {:noreply, state}
   end
 
   # --------------------------------------------------------
-  def handle_cast({:cache_delete, key}, %{port: port, ready: true} = state) do
+  def handle_cast({Static.Texture, :delete, key}, %{port: port, ready: true} = state) do
+    <<
+      @cmd_free_tx_id::unsigned-integer-size(32)-native,
+      byte_size(key) + 1::unsigned-integer-size(32)-native,
+      key::binary,
+      0::size(8)
+    >>
+    |> Glfw.Port.send(port)
+
+    {:noreply, state}
+  end
+
+  # --------------------------------------------------------
+  def handle_cast({Scenic.Cache.Dynamic.Texture, :put, key}, %{port: port, ready: true} = state) do
+    load_dynamic_texture(key, port)
+    {:noreply, state}
+  end
+
+  # --------------------------------------------------------
+  def handle_cast(
+        {Scenic.Cache.Dynamic.Texture, :delete, key},
+        %{port: port, ready: true} = state
+      ) do
     <<
       @cmd_free_tx_id::unsigned-integer-size(32)-native,
       byte_size(key) + 1::unsigned-integer-size(32)-native,
@@ -48,41 +71,48 @@ defmodule Scenic.Driver.Glfw.Cache do
   # ============================================================================
 
   # --------------------------------------------------------
-  def load_texture(key, port) do
-    with {:ok, data} <- Cache.fetch(key) do
-      data =
-        case data do
-          {:texture, data} -> data
-          data -> data
-        end
-
-      send_texture(key, data, port)
+  def load_static_texture(key, port) do
+    # Static.Texture.subscribe(key, :all)
+    with {:ok, data} <- Static.Texture.fetch(key) do
+      <<
+        @cmd_put_tx_file::unsigned-integer-size(32)-native,
+        byte_size(key) + 1::unsigned-integer-size(32)-native,
+        byte_size(data)::unsigned-integer-size(32)-native,
+        key::binary,
+        0::size(8),
+        data::binary
+      >>
+      |> Glfw.Port.send(port)
+    else
+      err -> IO.inspect(err, label: "load_static_texture")
     end
   end
 
   # --------------------------------------------------------
-  defp send_texture(_key, {width, height, depth, pixels}, port) do
-    <<
-      @cmd_put_tx_raw::unsigned-integer-size(32)-native,
-      width::unsigned-integer-size(32)-native,
-      height::unsigned-integer-size(32)-native,
-      depth::unsigned-integer-size(8),
-      byte_size(pixels)::unsigned-integer-size(32)-native,
-      pixels::binary
-    >>
-    |> Glfw.Port.send(port)
-  end
+  def load_dynamic_texture(key, port) do
+    with {:ok, {type, width, height, pixels}} <- Dynamic.Texture.fetch(key) do
+      depth =
+        case type do
+          :g -> 1
+          :ga -> 2
+          :rgb -> 3
+          :rgba -> 4
+        end
 
-  # --------------------------------------------------------
-  defp send_texture(key, data, port) when is_binary(data) do
-    <<
-      @cmd_put_tx_file::unsigned-integer-size(32)-native,
-      byte_size(key) + 1::unsigned-integer-size(32)-native,
-      byte_size(data)::unsigned-integer-size(32)-native,
-      key::binary,
-      0::size(8),
-      data::binary
-    >>
-    |> Glfw.Port.send(port)
+      <<
+        @cmd_put_tx_raw::unsigned-integer-size(32)-native,
+        byte_size(key) + 1::unsigned-integer-size(32)-native,
+        byte_size(pixels)::unsigned-integer-size(32)-native,
+        depth::unsigned-integer-size(32)-native,
+        width::unsigned-integer-size(32)-native,
+        height::unsigned-integer-size(32)-native,
+        key::binary,
+        0::size(8),
+        pixels::binary
+      >>
+      |> Glfw.Port.send(port)
+    else
+      err -> IO.inspect(err, label: "load_dynamic_texture")
+    end
   end
 end

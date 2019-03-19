@@ -21,7 +21,8 @@ void send_puts(const char* msg);
 void send_write(const char* msg);
 void send_inspect(void* data, int length);
 
-void send_cache_miss(const char* key);
+void send_static_texture_miss(const char* key);
+void send_dynamic_texture_miss(const char* key);
 void send_font_miss(const char* key);
 void send_reshape(int window_width, int window_height, int frame_width,
                   int frame_height);
