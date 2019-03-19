@@ -62,7 +62,7 @@ defmodule Scenic.Driver.GlfwTest do
     graph_key = {:graph, scene_ref, nil}
 
     # load the parrot texture into the cache
-    assert Scenic.Cache.Static.Texture.load(@parrot_hash, @parrot_path) == {:ok, @parrot_hash}
+    assert Scenic.Cache.Static.Texture.load(@parrot_path, @parrot_hash) == {:ok, @parrot_hash}
 
     # give the port time to spin up
     Process.sleep(1500)
@@ -342,10 +342,10 @@ defmodule Scenic.Driver.GlfwTest do
     Process.sleep(40)
 
     # custom font
-    assert Cache.Static.FontMetrics.load(@font_metrics_hash, @font_metrics_path) ==
+    assert Cache.Static.FontMetrics.load(@font_metrics_path, @font_metrics_hash) ==
              {:ok, @font_metrics_hash}
 
-    assert Cache.Static.Font.load(@font_hash, @font_path) == {:ok, @font_hash}
+    assert Cache.Static.Font.load(@font_path, @font_hash) == {:ok, @font_hash}
     Glfw.Font.load_font(@font_hash, state.port)
 
     Graph.build(font: @font_hash, font_size: 60)

@@ -8,5 +8,5 @@
   "makeup_elixir": {:hex, :makeup_elixir, "0.13.0", "be7a477997dcac2e48a9d695ec730b2d22418292675c75aa2d34ba0909dcdeda", [:mix], [{:makeup, "~> 0.8", [hex: :makeup, repo: "hexpm", optional: false]}], "hexpm"},
   "msgpax": {:hex, :msgpax, "2.2.2", "559a07806bbe5fdd31e4597455be030bd96356f7a621ca9eed832747c83bfb67", [:mix], [{:plug, "~> 1.0", [hex: :plug, repo: "hexpm", optional: true]}], "hexpm"},
   "nimble_parsec": {:hex, :nimble_parsec, "0.5.0", "90e2eca3d0266e5c53f8fbe0079694740b9c91b6747f2b7e3c5d21966bba8300", [:mix], [], "hexpm"},
-  "scenic": {:git, "https://github.com/boydm/scenic.git", "53243e1bc02485529b652d6390eae555c112ba9e", []},
+  "scenic": {:git, "https://github.com/boydm/scenic.git", "c99549227108a4bfdfcc18344803e3a219086a9e", []},
 }
