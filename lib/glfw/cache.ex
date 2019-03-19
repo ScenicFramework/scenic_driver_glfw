@@ -90,7 +90,7 @@ defmodule Scenic.Driver.Glfw.Cache do
 
   # --------------------------------------------------------
   def load_dynamic_texture(key, port) do
-    with {:ok, {type, width, height, pixels}} <- Dynamic.Texture.fetch(key) do
+    with {:ok, {type, width, height, pixels, _}} <- Dynamic.Texture.fetch(key) do
       depth =
         case type do
           :g -> 1
