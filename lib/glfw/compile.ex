@@ -29,7 +29,6 @@ defmodule Scenic.Driver.Glfw.Compile do
   @op_paint_image 0x09
   @op_paint_dynamic 0x0A
 
-
   @op_stroke_width 0x0C
   @op_stroke_color 0x0D
   @op_stroke_paint 0x0E
@@ -136,7 +135,7 @@ defmodule Scenic.Driver.Glfw.Compile do
         |> op_fill_paint()
 
       {:dynamic, {image, ox, oy, ex, ey, angle, alpha}} ->
-# IO.inspect(image, label: "dynamic")
+        # IO.inspect(image, label: "dynamic")
         ops
         |> op_paint_dynamic(image, ox, oy, ex, ey, angle, alpha)
         |> op_fill_paint()
@@ -637,7 +636,7 @@ defmodule Scenic.Driver.Glfw.Compile do
 
   defp op_paint_dynamic(ops, image, ox, oy, ex, ey, angle, alpha) do
     name_size = byte_size(image) + 1
-    
+
     # keep everything aligned on 4 byte boundaries
     {name_size, extra_buffer} =
       case 4 - rem(name_size, 4) do

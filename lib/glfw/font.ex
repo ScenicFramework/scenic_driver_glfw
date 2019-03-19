@@ -19,22 +19,24 @@ defmodule Scenic.Driver.Glfw.Font do
   # --------------------------------------------------------
   def load_font(font_key, port)
 
-  def load_font( hash, port ) when is_bitstring(hash) do
-    case Cache.Static.Font.fetch( hash ) do
+  def load_font(hash, port) when is_bitstring(hash) do
+    case Cache.Static.Font.fetch(hash) do
       {:ok, font} ->
-        do_load_font( font, hash, port )
-      _ ->
-        font_folder = :code.priv_dir(:scenic_driver_glfw)
-        |> Path.join(@font_folder)
+        do_load_font(font, hash, port)
 
-        with {:ok, ^hash} <- Cache.Static.Font.load( hash, font_folder ),
-        {:ok, font} <- Cache.Static.Font.fetch( hash ) do
-          do_load_font( font, hash, port )
+      _ ->
+        font_folder =
+          :code.priv_dir(:scenic_driver_glfw)
+          |> Path.join(@font_folder)
+
+        with {:ok, ^hash} <- Cache.Static.Font.load(hash, font_folder),
+             {:ok, font} <- Cache.Static.Font.fetch(hash) do
+          do_load_font(font, hash, port)
         end
     end
   end
 
-  defp do_load_font( font_blob, font_hash, port ) do
+  defp do_load_font(font_blob, font_hash, port) do
     <<
       @cmd_load_font_blob::unsigned-integer-size(32)-native,
       byte_size(font_hash) + 1::unsigned-integer-size(32)-native,

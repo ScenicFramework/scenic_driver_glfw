@@ -342,7 +342,9 @@ defmodule Scenic.Driver.GlfwTest do
     Process.sleep(40)
 
     # custom font
-    assert Cache.Static.FontMetrics.load(@font_metrics_hash, @font_metrics_path) == {:ok, @font_metrics_hash}
+    assert Cache.Static.FontMetrics.load(@font_metrics_hash, @font_metrics_path) ==
+             {:ok, @font_metrics_hash}
+
     assert Cache.Static.Font.load(@font_hash, @font_path) == {:ok, @font_hash}
     Glfw.Font.load_font(@font_hash, state.port)
 

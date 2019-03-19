@@ -47,7 +47,10 @@ defmodule Scenic.Driver.Glfw.Cache do
   end
 
   # --------------------------------------------------------
-  def handle_cast({Scenic.Cache.Dynamic.Texture, :delete, key}, %{port: port, ready: true} = state) do
+  def handle_cast(
+        {Scenic.Cache.Dynamic.Texture, :delete, key},
+        %{port: port, ready: true} = state
+      ) do
     <<
       @cmd_free_tx_id::unsigned-integer-size(32)-native,
       byte_size(key) + 1::unsigned-integer-size(32)-native,
@@ -88,12 +91,13 @@ defmodule Scenic.Driver.Glfw.Cache do
   # --------------------------------------------------------
   def load_dynamic_texture(key, port) do
     with {:ok, {type, width, height, pixels}} <- Dynamic.Texture.fetch(key) do
-      depth = case type do
-        :g -> 1
-        :ga -> 2
-        :rgb -> 3
-        :rgba -> 4
-      end
+      depth =
+        case type do
+          :g -> 1
+          :ga -> 2
+          :rgb -> 3
+          :rgba -> 4
+        end
 
       <<
         @cmd_put_tx_raw::unsigned-integer-size(32)-native,
@@ -111,5 +115,4 @@ defmodule Scenic.Driver.Glfw.Cache do
       err -> IO.inspect(err, label: "load_dynamic_texture")
     end
   end
-
 end
