@@ -29,7 +29,7 @@ defmodule Scenic.Driver.Glfw.Font do
           :code.priv_dir(:scenic_driver_glfw)
           |> Path.join(@font_folder)
 
-        with {:ok, ^hash} <- Cache.Static.Font.load(hash, font_folder),
+        with {:ok, ^hash} <- Cache.Static.Font.load(font_folder, hash),
              {:ok, font} <- Cache.Static.Font.fetch(hash) do
           do_load_font(font, hash, port)
         end
