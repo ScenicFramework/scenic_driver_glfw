@@ -1,6 +1,8 @@
 ### 0.10.0
 * cleanup code from @cretel
 * update stb_truetype and stb_image to latest
+* take minor updates from nanovg
+* No longer suppresses rendering of leading spaces in text
 
 ### 0.8.1
 * Add hack on macOS Mojave to get around GL bugs
