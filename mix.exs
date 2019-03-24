@@ -2,7 +2,7 @@ defmodule Scenic.Driver.Glfw.MixProject do
   use Mix.Project
 
   @github "https://github.com/boydm/scenic_driver_glfw"
-  @version "0.9.1"
+  @version "0.10.0"
 
   def project do
     [
@@ -12,7 +12,7 @@ defmodule Scenic.Driver.Glfw.MixProject do
       config_path: "config/config.exs",
       deps_path: "deps",
       lockfile: "mix.lock",
-      elixir: "~> 1.6",
+      elixir: "~> 1.8",
       description: description(),
       build_embedded: true,
       start_permanent: Mix.env() == :prod,
