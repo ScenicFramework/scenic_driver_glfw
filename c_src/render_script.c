@@ -31,7 +31,7 @@ functions to play a compiled render script
 #define OP_PAINT_IMAGE 0X09
 #define OP_PAINT_DYNAMIC 0X0A
 
-#define OP_ANTI_ALIAS 0X0A
+//#define OP_ANTI_ALIAS 0X0A
 
 #define OP_STROKE_WIDTH 0X0C
 #define OP_STROKE_COLOR 0X0D

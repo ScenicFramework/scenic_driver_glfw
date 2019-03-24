@@ -60,7 +60,7 @@ defmodule Scenic.Driver.Glfw.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:elixir_make, "~> 0.4"},
+      {:elixir_make, "~> 0.5"},
       # {:scenic, "~> 0.10"},
       {:scenic, git: "https://github.com/boydm/scenic.git"},
       {:ex_doc, ">= 0.0.0", only: [:dev]},
