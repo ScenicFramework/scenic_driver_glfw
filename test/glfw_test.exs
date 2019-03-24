@@ -413,8 +413,9 @@ defmodule Scenic.Driver.GlfwTest do
 
   defp test_push_graph(graph, {_, ref, id}) do
     Scene.handle_cast(
-      {:push_graph, graph, id, false},
+      {:push_graph, graph, id},
       %{
+        has_children: false,
         scene_ref: ref,
         raw_scene_refs: %{},
         dyn_scene_pids: %{},
