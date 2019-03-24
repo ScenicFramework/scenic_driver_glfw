@@ -49,7 +49,7 @@ by adding `scenic_driver_glfw` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:scenic_driver_glfw, "~> 0.9"}
+    {:scenic_driver_glfw, "~> 0.10"}
   ]
 end
 ```
