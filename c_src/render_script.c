@@ -131,42 +131,42 @@ void* get_script(window_data_t* p_data, GLuint id)
 //=============================================================================
 // types
 
-typedef struct __attribute__((__packed__))
+PACK(typedef struct color_t
 {
   GLuint r;
   GLuint g;
   GLuint b;
   GLuint a;
-} color_t;
+}) color_t;
 
-typedef struct __attribute__((__packed__))
+PACK(typedef struct xy_t
 {
   GLfloat x;
   GLfloat y;
-} xy_t;
+}) xy_t;
 
-typedef struct __attribute__((__packed__))
+PACK(typedef struct xywh_t
 {
   GLfloat x;
   GLfloat y;
   GLfloat w;
   GLfloat h;
-} xywh_t;
+}) xywh_t;
 
-typedef struct __attribute__((__packed__))
+PACK(typedef struct wh_t
 {
   GLfloat w;
   GLfloat h;
-} wh_t;
+}) wh_t;
 
-typedef struct __attribute__((__packed__))
+PACK(typedef struct whr_t
 {
   GLfloat w;
   GLfloat h;
   GLfloat r;
-} whr_t;
+}) whr_t;
 
-typedef struct __attribute__((__packed__))
+PACK(typedef struct bezier_to_t
 {
   GLfloat c1x;
   GLfloat c1y;
@@ -174,44 +174,44 @@ typedef struct __attribute__((__packed__))
   GLfloat c2y;
   GLfloat x;
   GLfloat y;
-} bezier_to_t;
+}) bezier_to_t;
 
-typedef struct __attribute__((__packed__))
+PACK(typedef struct quadratic_to_t
 {
   GLfloat cx;
   GLfloat cy;
   GLfloat x;
   GLfloat y;
-} quadratic_to_t;
+}) quadratic_to_t;
 
-typedef struct __attribute__((__packed__))
+PACK(typedef struct arc_to_t
 {
   GLfloat x1;
   GLfloat y1;
   GLfloat x2;
   GLfloat y2;
   GLfloat radius;
-} arc_to_t;
+}) arc_to_t;
 
-typedef struct __attribute__((__packed__))
+PACK(typedef struct ellipse_t
 {
   GLfloat rx;
   GLfloat ry;
-} ellipse_t;
+}) ellipse_t;
 
-typedef struct __attribute__((__packed__))
+PACK(typedef struct circle_t
 {
   GLfloat r;
-} circle_t;
+}) circle_t;
 
-typedef struct __attribute__((__packed__))
+PACK(typedef struct arc_sector_t
 {
   GLfloat radius;
   GLfloat start;
   GLfloat finish;
-} arc_sector_t;
+}) arc_sector_t;
 
-typedef struct __attribute__((__packed__))
+PACK(typedef struct matrix_t
 {
   GLfloat a;
   GLfloat b;
@@ -219,9 +219,9 @@ typedef struct __attribute__((__packed__))
   GLfloat d;
   GLfloat e;
   GLfloat f;
-} matrix_t;
+}) matrix_t;
 
-typedef struct __attribute__((__packed__))
+PACK(typedef struct triangle_t
 {
   GLfloat x0;
   GLfloat y0;
@@ -229,9 +229,9 @@ typedef struct __attribute__((__packed__))
   GLfloat y1;
   GLfloat x2;
   GLfloat y2;
-} triangle_t;
+}) triangle_t;
 
-typedef struct __attribute__((__packed__))
+PACK(typedef struct linear_gradient_t
 {
   GLfloat sx;
   GLfloat sy;
@@ -245,9 +245,9 @@ typedef struct __attribute__((__packed__))
   GLuint  eg;
   GLuint  eb;
   GLuint  ea;
-} linear_gradient_t;
+}) linear_gradient_t;
 
-typedef struct __attribute__((__packed__))
+PACK(typedef struct box_gradient_t
 {
   GLfloat x;
   GLfloat y;
@@ -263,9 +263,9 @@ typedef struct __attribute__((__packed__))
   GLuint  eg;
   GLuint  eb;
   GLuint  ea;
-} box_gradient_t;
+}) box_gradient_t;
 
-typedef struct __attribute__((__packed__))
+PACK(typedef struct radial_gradient_t
 {
   GLfloat cx;
   GLfloat cy;
@@ -279,9 +279,9 @@ typedef struct __attribute__((__packed__))
   GLuint  eg;
   GLuint  eb;
   GLuint  ea;
-} radial_gradient_t;
+}) radial_gradient_t;
 
-typedef struct __attribute__((__packed__))
+PACK(typedef struct image_pattern_t
 {
   GLfloat ox;
   GLfloat oy;
@@ -290,12 +290,12 @@ typedef struct __attribute__((__packed__))
   GLfloat angle;
   GLuint  alpha;
   GLuint  key_size;
-} image_pattern_t;
+}) image_pattern_t;
 
-typedef struct __attribute__((__packed__))
+PACK(typedef struct text_t
 {
   GLuint size;
-} text_t;
+}) text_t;
 
 //=============================================================================
 // operations

@@ -134,14 +134,14 @@ void receive_put_tx_blob(int* p_msg_length, GLFWwindow* window)
 }
 
 //---------------------------------------------------------
-typedef struct __attribute__((__packed__))
+PACK(typedef struct tx_pixels_t
 {
   GLuint key_size;
   GLuint pixel_size;
   GLuint depth;
   GLuint width;
   GLuint height;
-} tx_pixels_t;
+}) tx_pixels_t;
 
 void receive_put_tx_pixels(int* p_msg_length, GLFWwindow* window)
 {
