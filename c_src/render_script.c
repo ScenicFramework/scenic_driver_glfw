@@ -8,6 +8,10 @@ functions to play a compiled render script
 #include <math.h>
 #include <stdio.h>
 
+#ifdef _MSC_VER
+#include "windows_utils.h"
+#endif
+
 #include <GLFW/glfw3.h>
 #include <stdlib.h>
 

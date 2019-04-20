@@ -10,6 +10,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef _MSC_VER
+#include "windows_utils.h"
+#endif
+
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 

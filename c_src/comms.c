@@ -7,14 +7,20 @@ Functions to facilitate messages coming up or down from the all via stdin
 The caller will typically be erlang, so use the 2-byte length indicator
 */
 
+#ifdef _MSC_VER
+#include "windows_utils.h"
+#endif
+
 #include <GLFW/glfw3.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/time.h>
-#include <unistd.h>
 
-#include <sys/select.h>
+#ifndef _MSC_VER
+  #include <unistd.h>
+  #include <sys/time.h>
+  #include <sys/select.h>
+#endif
 
 #include "comms.h"
 #include "render_script.h"

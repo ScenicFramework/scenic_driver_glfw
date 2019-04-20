@@ -6,6 +6,10 @@
 Functions to load textures onto the graphics card
 */
 
+#ifdef _MSC_VER
+#include "windows_utils.h"
+#endif
+
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <stdlib.h> // malloc

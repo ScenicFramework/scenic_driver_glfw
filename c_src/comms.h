@@ -11,6 +11,10 @@
 #include <stdbool.h>
 #endif
 
+#ifdef _MSC_VER
+#include "windows_utils.h"
+#endif
+
 #include <GLFW/glfw3.h>
 
 bool read_bytes_down(void* p_buff, int bytes_to_read,
