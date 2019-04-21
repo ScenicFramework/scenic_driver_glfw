@@ -18,7 +18,8 @@ defmodule Scenic.Driver.Glfw do
 
   require Logger
 
-  @port '/' ++ to_charlist(Mix.env()) ++ '/scenic_driver_glfw'
+  @driver_ext if elem(:os.type(), 0) == :win32, do: '.exe', else: ''
+  @port '/' ++ to_charlist(Mix.env()) ++ '/scenic_driver_glfw' ++ @driver_ext
 
   @default_title "Driver Glfw"
   @default_resizeable false
