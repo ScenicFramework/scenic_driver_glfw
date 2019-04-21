@@ -4,15 +4,16 @@
 #
 */
 
-#include <poll.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #ifdef _MSC_VER
-#include "windows_utils.h"
+#include <fcntl.h> //O_BINARY
 #endif
+
+#include "comms.h"
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -21,7 +22,6 @@
 #include "nanovg/nanovg.h"
 #include "nanovg/nanovg_gl.h"
 
-#include "comms.h"
 #include "render_script.h"
 #include "types.h"
 #include "utils.h"
@@ -269,23 +269,6 @@ void cleanup_window(GLFWwindow* window)
 }
 
 //---------------------------------------------------------
-// return true if the caller side of the stdin pipe is open and in
-// business. If it closes, then return false
-// http://pubs.opengroup.org/onlinepubs/7908799/xsh/poll.html
-// see
-// https://stackoverflow.com/questions/25147181/pollhup-vs-pollnval-or-what-is-pollhup
-bool isCallerDown()
-{
-  struct pollfd ufd;
-  memset(&ufd, 0, sizeof ufd);
-  ufd.fd     = STDIN_FILENO;
-  ufd.events = POLLIN;
-  if (poll(&ufd, 1, 0) < 0)
-    return true;
-  return ufd.revents & POLLHUP;
-}
-
-//---------------------------------------------------------
 int main(int argc, char** argv)
 {
   GLFWwindow* window;
@@ -341,6 +324,11 @@ int main(int argc, char** argv)
   glfwGetWindowSize(window, &w, &h);
   glfwSetWindowSize(window, w++, h);
   glfwSetWindowSize(window, w, h);
+#endif
+
+#ifdef _MSC_VER
+  _setmode(_fileno(stdin), O_BINARY);
+  _setmode(_fileno(stdout), O_BINARY);
 #endif
 
   /* Loop until the calling app closes the window */

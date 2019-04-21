@@ -35,7 +35,7 @@ all: priv/$(MIX_ENV)/scenic_driver_glfw
 # fonts
 
 SRCS = c_src/main.c c_src/comms.c c_src/nanovg/nanovg.c \
-	c_src/utils.c c_src/render_script.c c_src/tx.c
+	c_src/utils.c c_src/render_script.c c_src/tx.c c_src/unix_comms.c
 	# c_src/nanovg/nanovg.c
 	# c_src/render.c c_src/text.c c_src/texture.c
 

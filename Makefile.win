@@ -21,7 +21,7 @@ LIBS = gdi32.lib opengl32.lib kernel32.lib user32.lib shell32.lib glew32.lib glf
 
 all: $(BUILDPATH) Makefile.auto.win $(BUILDPATH)\scenic_driver_glfw.exe
 
-SRCS = c_src\main.c c_src\comms.c c_src\nanovg\nanovg.c c_src\utils.c c_src\render_script.c c_src\tx.c
+SRCS = c_src\main.c c_src\comms.c c_src\nanovg\nanovg.c c_src\utils.c c_src\render_script.c c_src\tx.c c_src\windows_comms.c
 
 Makefile.auto.win:
 	erl -eval "io:format(\"~s~n\", [lists:concat([\"ERTS_INCLUDE_PATH=\", code:root_dir(), \"/erts-\", erlang:system_info(version), \"/include\"])])" -s init stop -noshell > $@

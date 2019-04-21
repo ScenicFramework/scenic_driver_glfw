@@ -7,22 +7,13 @@ Functions to facilitate messages coming up or down from the all via stdin
 The caller will typically be erlang, so use the 2-byte length indicator
 */
 
-#ifdef _MSC_VER
-#include "windows_utils.h"
-#endif
+#include "comms.h"
 
 #include <GLFW/glfw3.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#ifndef _MSC_VER
-  #include <unistd.h>
-  #include <sys/time.h>
-  #include <sys/select.h>
-#endif
-
-#include "comms.h"
 #include "render_script.h"
 #include "tx.h"
 #include "types.h"
@@ -117,33 +108,10 @@ void test_endian()
 }
 
 //---------------------------------------------------------
-int read_exact(byte* buf, int len)
-{
-  int i, got = 0;
-
-  do
-  {
-    if ((i = read(0, buf + got, len - got)) <= 0)
-      return (i);
-    got += i;
-  } while (got < len);
-
-  return (len);
+void swap_little_endian_uint(uint32_t* target) {
+  if (f_little_endian) {
+    *target = SWAP_UINT32(*target);
 }
-
-//---------------------------------------------------------
-int write_exact(byte* buf, int len)
-{
-  int i, wrote = 0;
-
-  do
-  {
-    if ((i = write(1, buf + wrote, len - wrote)) <= 0)
-      return (i);
-    wrote += i;
-  } while (wrote < len);
-
-  return (len);
 }
 
 //---------------------------------------------------------
@@ -162,47 +130,6 @@ int write_cmd(byte* buf, unsigned int len)
   written = write_exact(buf, len);
 
   return written;
-}
-
-//---------------------------------------------------------
-// Starts by using select to see if there is any data to be read
-// if not in timeout, then returns with -1
-// Setting the timeout too high means input will be laggy as you
-// are starving the input polling. Setting it too low means using
-// energy for no purpose. Probably best if set similar to the
-// frame rate
-int read_msg_length(struct timeval* ptv)
-{
-  byte buff[4];
-
-  fd_set rfds;
-  int    retval;
-
-  // Watch stdin (fd 0) to see when it has input.
-  FD_ZERO(&rfds);
-  FD_SET(0, &rfds);
-
-  // look for data
-  retval = select(1, &rfds, NULL, NULL, ptv);
-  if (retval == -1)
-  {
-    return -1; // error
-  }
-  else if (retval)
-  {
-    if (read_exact(buff, 4) != 4)
-      return (-1);
-    // length from erlang is always big endian
-    uint32_t len = *((uint32_t*) &buff);
-    if (f_little_endian)
-      len = SWAP_UINT32(len);
-    return len;
-  }
-  else
-  {
-    // no data within the timeout
-    return -1;
-  }
 }
 
 //---------------------------------------------------------

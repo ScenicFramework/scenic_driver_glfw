@@ -6,16 +6,12 @@
 Functions to load fonts and render text
 */
 
-#ifdef _MSC_VER
-#include "windows_utils.h"
-#endif
+#include "comms.h"
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <stdio.h>
 #include <string.h>
-
-#include "comms.h"
 
 void check_gl_error(char* msg)
 {
