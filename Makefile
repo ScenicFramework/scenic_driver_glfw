@@ -49,6 +49,6 @@ $(PREFIX)/$(MIX_ENV)/scenic_driver_glfw: $(SRCS)
 # 	ln -fs ../fonts priv/
 
 clean:
-	$(RM) -r priv/dev
-	$(RM) -r priv/test
-	$(RM) -r priv/prod
+	$(RM) -r $(PREFIX)/$(MIX_ENV)
+#	$(RM) -r $(PREFIX)/test
+#	$(RM) -r $(PREFIX)/prod
