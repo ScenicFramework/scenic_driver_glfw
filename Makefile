@@ -1,7 +1,7 @@
 \MIX = mix
 CFLAGS = -O3 -std=c99
 
-PREFIX=$(MIX_COMPILE_PATH)/../priv
+PREFIX=$(MIX_APP_PATH)/priv
 
 ifndef MIX_ENV
 	MIX_ENV = dev
