@@ -1,3 +1,6 @@
+### 0.10.1
+* fix issue compiling binary to the right place after elixir_make changes. Thank you to quite a few helpers.
+
 ### 0.10.0
 * cleanup code from @cretel
 * update stb_truetype and stb_image to latest

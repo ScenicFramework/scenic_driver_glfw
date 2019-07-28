@@ -2,7 +2,7 @@ defmodule Scenic.Driver.Glfw.MixProject do
   use Mix.Project
 
   @github "https://github.com/boydm/scenic_driver_glfw"
-  @version "0.10.0"
+  @version "0.10.1"
 
   def project do
     [
