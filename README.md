@@ -43,18 +43,18 @@ If you're using wayland, you'll probably need `glfw-wayland` instead of `glfw-x1
 
 ## General Installation
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
+As this is a hex package, it can be installed
 by adding `scenic_driver_glfw` to your list of dependencies in `mix.exs`:
 
 ```elixir
 def deps do
   [
-    {:scenic_driver_glfw, "~> 0.7"}
+    {:scenic_driver_glfw, "~> 0.10"}
   ]
 end
 ```
 
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at [https://hexdocs.pm/scenic_driver_mac](https://hexdocs.pm/scenic_driver_mac).
+## Documentation
+
+Documentation can be found at [https://hexdocs.pm/scenic_driver_glfw](https://hexdocs.pm/scenic_driver_glfw).
 

@@ -2,7 +2,7 @@ defmodule Scenic.Driver.Glfw.MixProject do
   use Mix.Project
 
   @github "https://github.com/boydm/scenic_driver_glfw"
-  @version "0.8.0"
+  @version "0.10.1"
 
   def project do
     [
@@ -12,7 +12,7 @@ defmodule Scenic.Driver.Glfw.MixProject do
       config_path: "config/config.exs",
       deps_path: "deps",
       lockfile: "mix.lock",
-      elixir: "~> 1.6",
+      elixir: "~> 1.8",
       description: description(),
       build_embedded: true,
       start_permanent: Mix.env() == :prod,
@@ -31,11 +31,14 @@ defmodule Scenic.Driver.Glfw.MixProject do
           "c_src/**/*.[ch]",
           "c_src/**/*.txt",
           "config",
-          "priv/fonts",
+          "priv/fonts/**/*.txt",
+          "priv/fonts/**/*.ttf.*",
           "lib/**/*.ex",
           "Makefile",
           "mix.exs",
-          "README.md"
+          "README.md",
+          "LICENSE",
+          "changelist.md"
         ]
       ],
       docs: [
@@ -58,8 +61,8 @@ defmodule Scenic.Driver.Glfw.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:elixir_make, "~> 0.4"},
-      {:scenic, "~> 0.8"},
+      {:elixir_make, "~> 0.6"},
+      {:scenic, "~> 0.10"},
       {:ex_doc, ">= 0.0.0", only: [:dev]},
       {:dialyxir, "~> 0.5", only: :dev, runtime: false}
     ]
