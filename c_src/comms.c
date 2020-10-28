@@ -7,16 +7,13 @@ Functions to facilitate messages coming up or down from the all via stdin
 The caller will typically be erlang, so use the 2-byte length indicator
 */
 
+#include "comms.h"
+
 #include <GLFW/glfw3.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/time.h>
-#include <unistd.h>
 
-#include <sys/select.h>
-
-#include "comms.h"
 #include "render_script.h"
 #include "tx.h"
 #include "types.h"
@@ -111,33 +108,10 @@ void test_endian()
 }
 
 //---------------------------------------------------------
-int read_exact(byte* buf, int len)
-{
-  int i, got = 0;
-
-  do
-  {
-    if ((i = read(0, buf + got, len - got)) <= 0)
-      return (i);
-    got += i;
-  } while (got < len);
-
-  return (len);
+void swap_little_endian_uint(uint32_t* target) {
+  if (f_little_endian) {
+    *target = SWAP_UINT32(*target);
 }
-
-//---------------------------------------------------------
-int write_exact(byte* buf, int len)
-{
-  int i, wrote = 0;
-
-  do
-  {
-    if ((i = write(1, buf + wrote, len - wrote)) <= 0)
-      return (i);
-    wrote += i;
-  } while (wrote < len);
-
-  return (len);
 }
 
 //---------------------------------------------------------
@@ -156,47 +130,6 @@ int write_cmd(byte* buf, unsigned int len)
   written = write_exact(buf, len);
 
   return written;
-}
-
-//---------------------------------------------------------
-// Starts by using select to see if there is any data to be read
-// if not in timeout, then returns with -1
-// Setting the timeout too high means input will be laggy as you
-// are starving the input polling. Setting it too low means using
-// energy for no purpose. Probably best if set similar to the
-// frame rate
-int read_msg_length(struct timeval* ptv)
-{
-  byte buff[4];
-
-  fd_set rfds;
-  int    retval;
-
-  // Watch stdin (fd 0) to see when it has input.
-  FD_ZERO(&rfds);
-  FD_SET(0, &rfds);
-
-  // look for data
-  retval = select(1, &rfds, NULL, NULL, ptv);
-  if (retval == -1)
-  {
-    return -1; // error
-  }
-  else if (retval)
-  {
-    if (read_exact(buff, 4) != 4)
-      return (-1);
-    // length from erlang is always big endian
-    uint32_t len = *((uint32_t*) &buff);
-    if (f_little_endian)
-      len = SWAP_UINT32(len);
-    return len;
-  }
-  else
-  {
-    // no data within the timeout
-    return -1;
-  }
 }
 
 //---------------------------------------------------------
@@ -313,14 +246,14 @@ void send_font_miss(const char* key)
 }
 
 //---------------------------------------------------------
-typedef struct __attribute__((__packed__))
+PACK(typedef struct msg_reshape_t
 {
   uint32_t msg_id;
   uint32_t window_width;
   uint32_t window_height;
   uint32_t frame_width;
   uint32_t frame_height;
-} msg_reshape_t;
+}) msg_reshape_t;
 
 void send_reshape(int window_width, int window_height, int frame_width,
                   int frame_height)
@@ -331,14 +264,14 @@ void send_reshape(int window_width, int window_height, int frame_width,
 }
 
 //---------------------------------------------------------
-typedef struct __attribute__((__packed__))
+PACK(typedef struct msg_key_t
 {
   uint32_t msg_id;
   uint32_t key;
   uint32_t scancode;
   uint32_t action;
   uint32_t mods;
-} msg_key_t;
+}) msg_key_t;
 
 void send_key(int key, int scancode, int action, int mods)
 {
@@ -347,12 +280,12 @@ void send_key(int key, int scancode, int action, int mods)
 }
 
 //---------------------------------------------------------
-typedef struct __attribute__((__packed__))
+PACK(typedef struct msg_codepoint_t
 {
   uint32_t msg_id;
   uint32_t codepoint;
   uint32_t mods;
-} msg_codepoint_t;
+}) msg_codepoint_t;
 
 void send_codepoint(unsigned int codepoint, int mods)
 {
@@ -361,12 +294,12 @@ void send_codepoint(unsigned int codepoint, int mods)
 }
 
 //---------------------------------------------------------
-typedef struct __attribute__((__packed__))
+PACK(typedef struct msg_cursor_pos_t
 {
   uint32_t msg_id;
   float    x;
   float    y;
-} msg_cursor_pos_t;
+}) msg_cursor_pos_t;
 
 void send_cursor_pos(float xpos, float ypos)
 {
@@ -375,7 +308,7 @@ void send_cursor_pos(float xpos, float ypos)
 }
 
 //---------------------------------------------------------
-typedef struct __attribute__((__packed__))
+PACK(typedef struct msg_mouse_button_t
 {
   uint32_t msg_id;
   uint32_t button;
@@ -383,7 +316,7 @@ typedef struct __attribute__((__packed__))
   uint32_t mods;
   float    xpos;
   float    ypos;
-} msg_mouse_button_t;
+}) msg_mouse_button_t;
 
 void send_mouse_button(int button, int action, int mods, float xpos, float ypos)
 {
@@ -393,14 +326,14 @@ void send_mouse_button(int button, int action, int mods, float xpos, float ypos)
 }
 
 //---------------------------------------------------------
-typedef struct __attribute__((__packed__))
+PACK(typedef struct msg_scroll_t
 {
   uint32_t msg_id;
   float    x_offset;
   float    y_offset;
   float    x;
   float    y;
-} msg_scroll_t;
+}) msg_scroll_t;
 
 void send_scroll(float xoffset, float yoffset, float xpos, float ypos)
 {
@@ -409,13 +342,13 @@ void send_scroll(float xoffset, float yoffset, float xpos, float ypos)
 }
 
 //---------------------------------------------------------
-typedef struct __attribute__((__packed__))
+PACK(typedef struct msg_cursor_enter_t
 {
   uint32_t msg_id;
   int32_t  entered;
   float    x;
   float    y;
-} msg_cursor_enter_t;
+}) msg_cursor_enter_t;
 
 void send_cursor_enter(int entered, float xpos, float ypos)
 {
@@ -431,11 +364,11 @@ void send_close()
 }
 
 //---------------------------------------------------------
-typedef struct __attribute__((__packed__))
+PACK(typedef struct msg_ready_t
 {
   uint32_t msg_id;
   int32_t  empty_dl;
-} msg_ready_t;
+}) msg_ready_t;
 void send_ready(int root_id)
 {
   msg_ready_t msg = {MSG_OUT_READY, root_id};
@@ -443,11 +376,11 @@ void send_ready(int root_id)
 }
 
 //---------------------------------------------------------
-typedef struct __attribute__((__packed__))
+PACK(typedef struct msg_draw_ready_t
 {
   uint32_t msg_id;
   uint32_t id;
-} msg_draw_ready_t;
+}) msg_draw_ready_t;
 
 void send_draw_ready(unsigned int id)
 {
@@ -459,7 +392,7 @@ void send_draw_ready(unsigned int id)
 // incoming messages
 
 //---------------------------------------------------------
-typedef struct __attribute__((__packed__))
+PACK(typedef struct msg_stats_t
 {
   uint32_t msg_id;
   uint32_t input_flags;
@@ -472,7 +405,7 @@ typedef struct __attribute__((__packed__))
   bool     iconified;
   bool     maximized;
   bool     visible;
-} msg_stats_t;
+}) msg_stats_t;
 void receive_query_stats(GLFWwindow* window)
 {
   msg_stats_t    msg;
@@ -509,11 +442,11 @@ void receive_input(int* p_msg_length, GLFWwindow* window)
 }
 
 //---------------------------------------------------------
-typedef struct __attribute__((__packed__))
+PACK(typedef struct cmd_move_t
 {
   int32_t x_w;
   int32_t y_h;
-} cmd_move_t;
+}) cmd_move_t;
 void receive_reshape(int* p_msg_length, GLFWwindow* window)
 {
   cmd_move_t move_data;
@@ -620,13 +553,13 @@ void receive_set_root(int* p_msg_length, GLFWwindow* window)
 }
 
 //---------------------------------------------------------
-typedef struct __attribute__((__packed__))
+PACK(typedef struct clear_color_t
 {
   GLuint r;
   GLuint g;
   GLuint b;
   GLuint a;
-} clear_color_t;
+}) clear_color_t;
 void receive_clear_color(int* p_msg_length)
 {
   // get the clear_color
@@ -636,11 +569,11 @@ void receive_clear_color(int* p_msg_length)
 }
 
 //---------------------------------------------------------
-typedef struct __attribute__((__packed__))
+PACK(typedef struct font_info_t
 {
   GLuint name_length;
   GLuint data_length;
-} font_info_t;
+}) font_info_t;
 
 void receive_load_font_file(int* p_msg_length, GLFWwindow* window)
 {

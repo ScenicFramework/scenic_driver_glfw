@@ -17,14 +17,23 @@
 #include "nanovg/nanovg.h"
 #endif
 
+#ifndef PACK
+  #ifdef _MSC_VER
+    #define PACK( __Declaration__ ) \
+        __pragma( pack(push, 1) ) __Declaration__ __pragma( pack(pop) )
+  #elif defined(__GNUC__)
+    #define PACK( __Declaration__ ) __Declaration__ __attribute__((__packed__))
+  #endif
+#endif
+
 typedef unsigned char byte;
 
 //---------------------------------------------------------
-typedef struct __attribute__((__packed__))
+PACK(typedef struct Vector2f
 {
   float x;
   float y;
-} Vector2f;
+}) Vector2f;
 
 //---------------------------------------------------------
 typedef struct

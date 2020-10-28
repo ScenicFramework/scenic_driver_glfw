@@ -53,7 +53,7 @@ static tx_id_t* put_tx_id(tx_id_t* p_tx_ids, char* p_key, int key_size, int id,
   tx_id_t*     p_tx_id = malloc(size);
   memset(p_tx_id, 0, size);
   p_tx_id->id  = id;
-  p_tx_id->key = (void*) p_tx_id + sizeof(tx_id_t);
+  p_tx_id->key = (void*)((char *)p_tx_id + sizeof(tx_id_t));
   memcpy((char*) p_tx_id->key, p_key, key_size);
 
   HASH_ADD_KEYPTR(hh, p_tx_ids, p_tx_id->key, strlen(p_tx_id->key), p_tx_id);
@@ -134,14 +134,14 @@ void receive_put_tx_blob(int* p_msg_length, GLFWwindow* window)
 }
 
 //---------------------------------------------------------
-typedef struct __attribute__((__packed__))
+PACK(typedef struct tx_pixels_t
 {
   GLuint key_size;
   GLuint pixel_size;
   GLuint depth;
   GLuint width;
   GLuint height;
-} tx_pixels_t;
+}) tx_pixels_t;
 
 void receive_put_tx_pixels(int* p_msg_length, GLFWwindow* window)
 {

@@ -11,7 +11,19 @@
 #include <stdbool.h>
 #endif
 
+#ifdef _MSC_VER
+  #include "windows_comms.h"
+#else
+  #include "unix_comms.h"
+#endif
+
+#include <GL/glew.h>
 #include <GLFW/glfw3.h>
+
+int read_exact(byte* buf, int len);
+int write_exact(byte* buf, int len);
+int read_msg_length(struct timeval * ptv);
+bool isCallerDown();
 
 bool read_bytes_down(void* p_buff, int bytes_to_read,
                      int* p_bytes_to_remaining);
@@ -40,6 +52,7 @@ void send_draw_ready(unsigned int id);
 void* comms_thread(void* window);
 
 void test_endian();
+void swap_little_endian_uint(uint32_t* target);
 
 bool handle_stdio_in(GLFWwindow* window);
 

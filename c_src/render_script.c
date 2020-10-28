@@ -8,10 +8,11 @@ functions to play a compiled render script
 #include <math.h>
 #include <stdio.h>
 
+#include "comms.h"
+
 #include <GLFW/glfw3.h>
 #include <stdlib.h>
 
-#include "comms.h"
 #include "nanovg/nanovg.h"
 #include "render_script.h"
 #include "tx.h"
@@ -131,42 +132,42 @@ void* get_script(window_data_t* p_data, GLuint id)
 //=============================================================================
 // types
 
-typedef struct __attribute__((__packed__))
+PACK(typedef struct color_t
 {
   GLuint r;
   GLuint g;
   GLuint b;
   GLuint a;
-} color_t;
+}) color_t;
 
-typedef struct __attribute__((__packed__))
+PACK(typedef struct xy_t
 {
   GLfloat x;
   GLfloat y;
-} xy_t;
+}) xy_t;
 
-typedef struct __attribute__((__packed__))
+PACK(typedef struct xywh_t
 {
   GLfloat x;
   GLfloat y;
   GLfloat w;
   GLfloat h;
-} xywh_t;
+}) xywh_t;
 
-typedef struct __attribute__((__packed__))
+PACK(typedef struct wh_t
 {
   GLfloat w;
   GLfloat h;
-} wh_t;
+}) wh_t;
 
-typedef struct __attribute__((__packed__))
+PACK(typedef struct whr_t
 {
   GLfloat w;
   GLfloat h;
   GLfloat r;
-} whr_t;
+}) whr_t;
 
-typedef struct __attribute__((__packed__))
+PACK(typedef struct bezier_to_t
 {
   GLfloat c1x;
   GLfloat c1y;
@@ -174,44 +175,44 @@ typedef struct __attribute__((__packed__))
   GLfloat c2y;
   GLfloat x;
   GLfloat y;
-} bezier_to_t;
+}) bezier_to_t;
 
-typedef struct __attribute__((__packed__))
+PACK(typedef struct quadratic_to_t
 {
   GLfloat cx;
   GLfloat cy;
   GLfloat x;
   GLfloat y;
-} quadratic_to_t;
+}) quadratic_to_t;
 
-typedef struct __attribute__((__packed__))
+PACK(typedef struct arc_to_t
 {
   GLfloat x1;
   GLfloat y1;
   GLfloat x2;
   GLfloat y2;
   GLfloat radius;
-} arc_to_t;
+}) arc_to_t;
 
-typedef struct __attribute__((__packed__))
+PACK(typedef struct ellipse_t
 {
   GLfloat rx;
   GLfloat ry;
-} ellipse_t;
+}) ellipse_t;
 
-typedef struct __attribute__((__packed__))
+PACK(typedef struct circle_t
 {
   GLfloat r;
-} circle_t;
+}) circle_t;
 
-typedef struct __attribute__((__packed__))
+PACK(typedef struct arc_sector_t
 {
   GLfloat radius;
   GLfloat start;
   GLfloat finish;
-} arc_sector_t;
+}) arc_sector_t;
 
-typedef struct __attribute__((__packed__))
+PACK(typedef struct matrix_t
 {
   GLfloat a;
   GLfloat b;
@@ -219,9 +220,9 @@ typedef struct __attribute__((__packed__))
   GLfloat d;
   GLfloat e;
   GLfloat f;
-} matrix_t;
+}) matrix_t;
 
-typedef struct __attribute__((__packed__))
+PACK(typedef struct triangle_t
 {
   GLfloat x0;
   GLfloat y0;
@@ -229,9 +230,9 @@ typedef struct __attribute__((__packed__))
   GLfloat y1;
   GLfloat x2;
   GLfloat y2;
-} triangle_t;
+}) triangle_t;
 
-typedef struct __attribute__((__packed__))
+PACK(typedef struct linear_gradient_t
 {
   GLfloat sx;
   GLfloat sy;
@@ -245,9 +246,9 @@ typedef struct __attribute__((__packed__))
   GLuint  eg;
   GLuint  eb;
   GLuint  ea;
-} linear_gradient_t;
+}) linear_gradient_t;
 
-typedef struct __attribute__((__packed__))
+PACK(typedef struct box_gradient_t
 {
   GLfloat x;
   GLfloat y;
@@ -263,9 +264,9 @@ typedef struct __attribute__((__packed__))
   GLuint  eg;
   GLuint  eb;
   GLuint  ea;
-} box_gradient_t;
+}) box_gradient_t;
 
-typedef struct __attribute__((__packed__))
+PACK(typedef struct radial_gradient_t
 {
   GLfloat cx;
   GLfloat cy;
@@ -279,9 +280,9 @@ typedef struct __attribute__((__packed__))
   GLuint  eg;
   GLuint  eb;
   GLuint  ea;
-} radial_gradient_t;
+}) radial_gradient_t;
 
-typedef struct __attribute__((__packed__))
+PACK(typedef struct image_pattern_t
 {
   GLfloat ox;
   GLfloat oy;
@@ -290,12 +291,12 @@ typedef struct __attribute__((__packed__))
   GLfloat angle;
   GLuint  alpha;
   GLuint  key_size;
-} image_pattern_t;
+}) image_pattern_t;
 
-typedef struct __attribute__((__packed__))
+PACK(typedef struct text_t
 {
   GLuint size;
-} text_t;
+}) text_t;
 
 //=============================================================================
 // operations
@@ -306,7 +307,7 @@ void* internal_run_script(void* p_script, window_data_t* p_data)
 {
   GLuint id = *(GLuint*) p_script;
   run_script(id, p_data);
-  return p_script + sizeof(GLuint);
+  return (void *)((char *)p_script + sizeof(GLuint));
 }
 
 //---------------------------------------------------------
@@ -321,7 +322,7 @@ void* paint_linear(NVGcontext* p_ctx, void* p_script)
                         nvgRGBA(grad->sr, grad->sg, grad->sb, grad->sa),
                         nvgRGBA(grad->er, grad->eg, grad->eb, grad->ea));
 
-  return p_script + sizeof(linear_gradient_t);
+  return (void *)((char *)p_script + sizeof(linear_gradient_t));
 }
 
 void* paint_box(NVGcontext* p_ctx, void* p_script)
@@ -333,7 +334,7 @@ void* paint_box(NVGcontext* p_ctx, void* p_script)
       nvgRGBA(grad->sr, grad->sg, grad->sb, grad->sa),
       nvgRGBA(grad->er, grad->eg, grad->eb, grad->ea));
 
-  return p_script + sizeof(box_gradient_t);
+  return (void *)((char *)p_script + sizeof(box_gradient_t));
 }
 
 void* paint_radial(NVGcontext* p_ctx, void* p_script)
@@ -345,13 +346,13 @@ void* paint_radial(NVGcontext* p_ctx, void* p_script)
                         nvgRGBA(grad->sr, grad->sg, grad->sb, grad->sa),
                         nvgRGBA(grad->er, grad->eg, grad->eb, grad->ea));
 
-  return p_script + sizeof(radial_gradient_t);
+  return (void *)((char *)p_script + sizeof(radial_gradient_t));
 }
 
 void* paint_image(NVGcontext* p_ctx, void* p_script, window_data_t* p_data)
 {
   image_pattern_t* img = (image_pattern_t*) p_script;
-  p_script += sizeof(image_pattern_t);
+  p_script = (void *)((char *)p_script + sizeof(image_pattern_t));
 
   float alpha = (float) img->alpha / 255.0;
 
@@ -385,13 +386,13 @@ void* paint_image(NVGcontext* p_ctx, void* p_script, window_data_t* p_data)
         nvgImagePattern(p_ctx, ox, oy, ex, ey, img->angle, id, alpha);
   }
 
-  return p_script + img->key_size;
+  return (void *)((char *)p_script + img->key_size);
 }
 
 void* paint_dynamic(NVGcontext* p_ctx, void* p_script, window_data_t* p_data)
 {
   image_pattern_t* img = (image_pattern_t*) p_script;
-  p_script += sizeof(image_pattern_t);
+  p_script = (void *)((char *)p_script + sizeof(image_pattern_t));
 
   float alpha = (float) img->alpha / 255.0;
 
@@ -425,7 +426,7 @@ void* paint_dynamic(NVGcontext* p_ctx, void* p_script, window_data_t* p_data)
         nvgImagePattern(p_ctx, ox, oy, ex, ey, img->angle, id, alpha);
   }
 
-  return p_script + img->key_size;
+  return (void *)((char *)p_script + img->key_size);
 }
 
 //---------------------------------------------------------
@@ -434,33 +435,33 @@ void* paint_dynamic(NVGcontext* p_ctx, void* p_script, window_data_t* p_data)
 void* shape_anti_alias(NVGcontext* p_ctx, void* p_script)
 {
   nvgShapeAntiAlias(p_ctx, *(int*) p_script);
-  return p_script + sizeof(int);
+  return (void *)((char *)p_script + sizeof(int));
 }
 
 void* stroke_color(NVGcontext* p_ctx, void* p_script)
 {
   color_t* color = (color_t*) p_script;
   nvgStrokeColor(p_ctx, nvgRGBA(color->r, color->g, color->b, color->a));
-  return p_script + sizeof(color_t);
+  return (void *)((char *)p_script + sizeof(color_t));
 }
 
 void* shape_width(NVGcontext* p_ctx, void* p_script)
 {
   nvgStrokeWidth(p_ctx, *(float*) p_script);
-  return p_script + sizeof(float);
+  return (void *)((char *)p_script + sizeof(float));
 }
 
 void* fill_color(NVGcontext* p_ctx, void* p_script)
 {
   color_t* color = (color_t*) p_script;
   nvgFillColor(p_ctx, nvgRGBA(color->r, color->g, color->b, color->a));
-  return p_script + sizeof(color_t);
+  return (void *)((char *)p_script + sizeof(color_t));
 }
 
 void* miter_limit(NVGcontext* p_ctx, void* p_script)
 {
   nvgMiterLimit(p_ctx, *(float*) p_script);
-  return p_script + sizeof(float);
+  return (void *)((char *)p_script + sizeof(float));
 }
 
 void* line_cap(NVGcontext* p_ctx, void* p_script)
@@ -480,7 +481,7 @@ void* line_cap(NVGcontext* p_ctx, void* p_script)
     default:
       break;
   }
-  return p_script + sizeof(uint32_t);
+  return (void *)((char *)p_script + sizeof(uint32_t));
 }
 
 void* line_join(NVGcontext* p_ctx, void* p_script)
@@ -500,13 +501,13 @@ void* line_join(NVGcontext* p_ctx, void* p_script)
     default:
       break;
   }
-  return p_script + sizeof(uint32_t);
+  return (void *)((char *)p_script + sizeof(uint32_t));
 }
 
 void* global_alpha(NVGcontext* p_ctx, void* p_script)
 {
   nvgGlobalAlpha(p_ctx, *(float*) p_script);
-  return p_script + sizeof(float);
+  return (void *)((char *)p_script + sizeof(float));
 }
 
 //---------------------------------------------------------
@@ -516,14 +517,14 @@ void* scissor(NVGcontext* p_ctx, void* p_script)
 {
   wh_t* wh = (wh_t*) p_script;
   nvgScissor(p_ctx, 0, 0, wh->w, wh->h);
-  return p_script + sizeof(wh_t);
+  return (void *)((char *)p_script + sizeof(wh_t));
 }
 
 void* intersect_scissor(NVGcontext* p_ctx, void* p_script)
 {
   wh_t* wh = (wh_t*) p_script;
   nvgIntersectScissor(p_ctx, 0, 0, wh->w, wh->h);
-  return p_script + sizeof(wh_t);
+  return (void *)((char *)p_script + sizeof(wh_t));
 }
 
 //---------------------------------------------------------
@@ -533,14 +534,14 @@ void* move_to(NVGcontext* p_ctx, void* p_script)
 {
   xy_t* xywh = (xy_t*) p_script;
   nvgMoveTo(p_ctx, xywh->x, xywh->y);
-  return p_script + sizeof(xy_t);
+  return (void *)((char *)p_script + sizeof(xy_t));
 }
 
 void* line_to(NVGcontext* p_ctx, void* p_script)
 {
   xy_t* xywh = (xy_t*) p_script;
   nvgLineTo(p_ctx, xywh->x, xywh->y);
-  return p_script + sizeof(xy_t);
+  return (void *)((char *)p_script + sizeof(xy_t));
 }
 
 void* bezier_to(NVGcontext* p_ctx, void* p_script)
@@ -548,21 +549,21 @@ void* bezier_to(NVGcontext* p_ctx, void* p_script)
   bezier_to_t* bezier = (bezier_to_t*) p_script;
   nvgBezierTo(p_ctx, bezier->c1x, bezier->c1y, bezier->c2x, bezier->c2y,
               bezier->x, bezier->y);
-  return p_script + sizeof(bezier_to_t);
+  return (void *)((char *)p_script + sizeof(bezier_to_t));
 }
 
 void* quadratic_to(NVGcontext* p_ctx, void* p_script)
 {
   quadratic_to_t* quad = (quadratic_to_t*) p_script;
   nvgQuadTo(p_ctx, quad->cx, quad->cy, quad->x, quad->y);
-  return p_script + sizeof(quadratic_to_t);
+  return (void *)((char *)p_script + sizeof(quadratic_to_t));
 }
 
 void* arc_to(NVGcontext* p_ctx, void* p_script)
 {
   arc_to_t* arc = (arc_to_t*) p_script;
   nvgArcTo(p_ctx, arc->x1, arc->y1, arc->x2, arc->y2, arc->radius);
-  return p_script + sizeof(arc_to_t);
+  return (void *)((char *)p_script + sizeof(arc_to_t));
 }
 
 void* path_winding(NVGcontext* p_ctx, void* p_script)
@@ -575,7 +576,7 @@ void* path_winding(NVGcontext* p_ctx, void* p_script)
   {
     nvgPathWinding(p_ctx, NVG_HOLE);
   }
-  return p_script + sizeof(int);
+  return (void *)((char *)p_script + sizeof(int));
 }
 
 void* triangle(NVGcontext* p_ctx, void* p_script)
@@ -585,35 +586,35 @@ void* triangle(NVGcontext* p_ctx, void* p_script)
   nvgLineTo(p_ctx, tri->x1, tri->y1);
   nvgLineTo(p_ctx, tri->x2, tri->y2);
   nvgClosePath(p_ctx);
-  return p_script + sizeof(triangle_t);
+  return (void *)((char *)p_script + sizeof(triangle_t));
 }
 
 void* rect(NVGcontext* p_ctx, void* p_script)
 {
   wh_t* wh = (wh_t*) p_script;
   nvgRect(p_ctx, 0, 0, wh->w, wh->h);
-  return p_script + sizeof(wh_t);
+  return (void *)((char *)p_script + sizeof(wh_t));
 }
 
 void* round_rect(NVGcontext* p_ctx, void* p_script)
 {
   whr_t* whr = (whr_t*) p_script;
   nvgRoundedRect(p_ctx, 0, 0, whr->w, whr->h, whr->r);
-  return p_script + sizeof(whr_t);
+  return (void *)((char *)p_script + sizeof(whr_t));
 }
 
 void* ellipse(NVGcontext* p_ctx, void* p_script)
 {
   ellipse_t* ellipse = (ellipse_t*) p_script;
   nvgEllipse(p_ctx, 0, 0, ellipse->rx, ellipse->ry);
-  return p_script + sizeof(ellipse_t);
+  return (void *)((char *)p_script + sizeof(ellipse_t));
 }
 
 void* circle(NVGcontext* p_ctx, void* p_script)
 {
   GLfloat radius = *(GLfloat*) p_script;
   nvgCircle(p_ctx, 0, 0, radius);
-  return p_script + sizeof(GLfloat);
+  return (void *)((char *)p_script + sizeof(GLfloat));
 }
 
 void* arc(NVGcontext* p_ctx, void* p_script)
@@ -653,7 +654,7 @@ void* arc(NVGcontext* p_ctx, void* p_script)
     // arc doesn't close
   }
 
-  return p_script + sizeof(arc_sector_t);
+  return (void *)((char *)p_script + sizeof(arc_sector_t));
 }
 
 void* sector(NVGcontext* p_ctx, void* p_script)
@@ -688,13 +689,13 @@ void* sector(NVGcontext* p_ctx, void* p_script)
     nvgClosePath(p_ctx);
   }
 
-  return p_script + sizeof(arc_sector_t);
+  return (void *)((char *)p_script + sizeof(arc_sector_t));
 }
 
 void* text(NVGcontext* p_ctx, void* p_script)
 {
   text_t* text_info = (text_t*) p_script;
-  p_script += sizeof(text_t);
+  p_script = (void *)((char *)p_script + sizeof(text_t));
 
   float       x     = 0;
   float       y     = 0;
@@ -719,7 +720,7 @@ void* text(NVGcontext* p_ctx, void* p_script)
   }
 
   // Text is padded to 32-bits
-  return p_script + ((text_info->size + 3) & ~3);
+  return (void *)((char *)p_script + ((text_info->size + 3) & ~3));
 }
 
 //---------------------------------------------------------
@@ -727,40 +728,40 @@ void* text(NVGcontext* p_ctx, void* p_script)
 void* tx_rotate(NVGcontext* p_ctx, void* p_script)
 {
   nvgRotate(p_ctx, *(float*) p_script);
-  return p_script + sizeof(float);
+  return (void *)((char *)p_script + sizeof(float));
 }
 
 void* tx_translate(NVGcontext* p_ctx, void* p_script)
 {
   xy_t* xy = (xy_t*) p_script;
   nvgTranslate(p_ctx, xy->x, xy->y);
-  return p_script + sizeof(xy_t);
+  return (void *)((char *)p_script + sizeof(xy_t));
 }
 
 void* tx_scale(NVGcontext* p_ctx, void* p_script)
 {
   xy_t* xy = (xy_t*) p_script;
   nvgScale(p_ctx, xy->x, xy->y);
-  return p_script + sizeof(xy_t);
+  return (void *)((char *)p_script + sizeof(xy_t));
 }
 
 void* tx_skew_x(NVGcontext* p_ctx, void* p_script)
 {
   nvgSkewX(p_ctx, *(float*) p_script);
-  return p_script + sizeof(float);
+  return (void *)((char *)p_script + sizeof(float));
 }
 
 void* tx_skew_y(NVGcontext* p_ctx, void* p_script)
 {
   nvgSkewY(p_ctx, *(float*) p_script);
-  return p_script + sizeof(float);
+  return (void *)((char *)p_script + sizeof(float));
 }
 
 void* tx_matrix(NVGcontext* p_ctx, void* p_script)
 {
   matrix_t* tx = (matrix_t*) p_script;
   nvgTransform(p_ctx, tx->a, tx->b, tx->c, tx->d, tx->e, tx->f);
-  return p_script + sizeof(matrix_t);
+  return (void *)((char *)p_script + sizeof(matrix_t));
 }
 
 //---------------------------------------------------------
@@ -769,7 +770,7 @@ void* tx_matrix(NVGcontext* p_ctx, void* p_script)
 void* font(NVGcontext* p_ctx, void* p_script)
 {
   GLuint name_length = *(GLuint*) p_script;
-  p_script += sizeof(GLuint);
+  p_script = (void *)((char *)p_script + sizeof(GLuint));
 
   // get the id for the font. If it isn't loaded, request it
   int font_id = nvgFindFont(p_ctx, p_script);
@@ -783,31 +784,31 @@ void* font(NVGcontext* p_ctx, void* p_script)
     send_font_miss(p_script);
   }
 
-  return p_script + name_length;
+  return (void *)((char *)p_script + name_length);
 }
 
 void* font_blur(NVGcontext* p_ctx, void* p_script)
 {
   nvgFontBlur(p_ctx, *(float*) p_script);
-  return p_script + sizeof(float);
+  return (void *)((char *)p_script + sizeof(float));
 }
 
 void* font_size(NVGcontext* p_ctx, void* p_script)
 {
   nvgFontSize(p_ctx, *(float*) p_script);
-  return p_script + sizeof(float);
+  return (void *)((char *)p_script + sizeof(float));
 }
 
 void* text_align(NVGcontext* p_ctx, void* p_script)
 {
   nvgTextAlign(p_ctx, *(uint32_t*) p_script);
-  return p_script + sizeof(uint32_t);
+  return (void *)((char *)p_script + sizeof(uint32_t));
 }
 
 void* text_height(NVGcontext* p_ctx, void* p_script)
 {
   nvgTextLineHeight(p_ctx, *(float*) p_script);
-  return p_script + sizeof(float);
+  return (void *)((char *)p_script + sizeof(float));
 }
 
 //=============================================================================
@@ -839,7 +840,7 @@ void run_script(GLuint script_id, window_data_t* p_data)
   {
 
     // advance the pointer past the op code
-    p_script += sizeof(GLuint);
+    p_script = (void *)((char *)p_script + sizeof(GLuint));
 
     // take the appropriate action based on the command id
     switch (op)

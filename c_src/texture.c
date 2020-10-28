@@ -6,11 +6,12 @@
 Functions to load textures onto the graphics card
 */
 
+#include "comms.h"
+
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <stdlib.h> // malloc
 
-#include "comms.h"
 #include "texture.h"
 #include "types.h"
 
