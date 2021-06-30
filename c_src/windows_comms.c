@@ -51,9 +51,8 @@ int read_msg_length(struct timeval * ptv)
 
       // length from erlang is always big endian
       uint32_t len = *((uint32_t*) &buff);
-      swap_little_endian_uint(&len);
 
-      return len;
+    return ntoh_ui32(len);
   }
 
   return -1;

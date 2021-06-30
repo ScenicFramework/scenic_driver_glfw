@@ -34,12 +34,11 @@ endif
 .PHONY: all clean
 
 all: $(PREFIX)/$(MIX_ENV)/scenic_driver_glfw
-# fonts
 
-SRCS = c_src/main.c c_src/comms.c c_src/nanovg/nanovg.c \
-	c_src/utils.c c_src/render_script.c c_src/tx.c c_src/unix_comms.c
-	# c_src/nanovg/nanovg.c
-	# c_src/render.c c_src/text.c c_src/texture.c
+SRCS = c_src/main.c c_src/nanovg/nanovg.c c_src/comms.c c_src/unix_comms.c \
+c_src/utils.c c_src/script.c c_src/image.c c_src/tommyds/src/tommyhashlin.c \
+c_src/tommyds/src/tommyhash.c 
+
 
 $(PREFIX)/$(MIX_ENV)/scenic_driver_glfw: $(SRCS)
 	mkdir -p $(PREFIX)/$(MIX_ENV)
@@ -50,5 +49,3 @@ $(PREFIX)/$(MIX_ENV)/scenic_driver_glfw: $(SRCS)
 
 clean:
 	$(RM) -r $(PREFIX)/$(MIX_ENV)
-#	$(RM) -r $(PREFIX)/test
-#	$(RM) -r $(PREFIX)/prod

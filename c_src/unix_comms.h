@@ -2,8 +2,7 @@
 # Implementations to handle port communication on UNIX-based systems
 */
 
-#ifndef _UNIX_COMMS_H
-  #define _UNIX_COMMS_H
+#pragma once
 
   #include <stdio.h>
   #include <unistd.h>
@@ -14,5 +13,4 @@
   #include <string.h>
 
   #include "types.h"
-  #include "utils.h"
-#endif
+  // #include "utils.h"

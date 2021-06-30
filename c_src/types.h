@@ -1,13 +1,12 @@
 /*
 #  Created by Boyd Multerer on 12/05/17.
-#  Copyright © 2017 Kry10 Industries. All rights reserved.
+#  Copyright © 2017 Kry10 Limited. All rights reserved.
 #
 */
 
 // one unified place for the various structures
 
-#ifndef _RENDER_GLFW_TYPES_H
-#define _RENDER_GLFW_TYPES_H
+#pragma once
 
 #ifndef bool
 #include <stdbool.h>
@@ -54,14 +53,11 @@ typedef struct
 {
   bool      keep_going;
   bool      redraw;
-  uint32_t  input_flags;
+  unsigned int input_flags;
   float     last_x;
   float     last_y;
-  void**    p_scripts;
-  int       root_script;
-  int       num_scripts;
-  void*     p_tx_ids;
+  // void**    p_scripts;
+  // int       root_script;
+  // void*     p_tx_ids;
   context_t context;
 } window_data_t;
-
-#endif // RENDER_GLFW_TYPES

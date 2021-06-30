@@ -1,6 +1,6 @@
 /*
 #  Created by Boyd Multerer on 2/14/18.
-#  Copyright © 2018 Kry10 Industries. All rights reserved.
+#  Copyright © 2018 Kry10 Limited. All rights reserved.
 #
 
 Functions to facilitate messages coming up or down from the all via stdin
@@ -14,8 +14,10 @@ The caller will typically be erlang, so use the 2-byte length indicator
 #include <stdlib.h>
 #include <string.h>
 
-#include "render_script.h"
-#include "tx.h"
+// #include "render_script.h"
+// #include "tx.h"
+#include "script.h"
+#include "image.h"
 #include "types.h"
 #include "utils.h"
 
@@ -39,37 +41,45 @@ The caller will typically be erlang, so use the 2-byte length indicator
 #define MSG_OUT_DYNAMIC_TEXTURE_MISS 0x21
 
 #define MSG_OUT_FONT_MISS 0x22
+#define MSG_IMG_MISS 0x23
 
 #define MSG_OUT_NEW_TX_ID 0x31
 #define MSG_OUT_NEW_FONT_ID 0x32
 
-#define CMD_RENDER_GRAPH 0x01
-#define CMD_CLEAR_GRAPH 0x02
-#define CMD_SET_ROOT 0x03
 
-#define CMD_CLEAR_COLOR 0x05
+
+#define CMD_PUT_SCRIPT  0x01
+#define CMD_DEL_SCRIPT  0x02
+#define CMD_RESET       0x03
+
+#define CMD_RENDER 0x06
 
 #define CMD_INPUT 0x0A
 
 #define CMD_QUIT 0x20
-#define CMD_QUERY_STATS 0x21
-#define CMD_RESHAPE 0x22
-#define CMD_POSITION 0x23
-#define CMD_FOCUS 0x24
-#define CMD_ICONIFY 0x25
-#define CMD_MAXIMIZE 0x26
-#define CMD_RESTORE 0x27
-#define CMD_SHOW 0x28
-#define CMD_HIDE 0x29
 
-#define CMD_NEW_TX_ID 0x32
-#define CMD_FREE_TX_ID 0x33
-#define CMD_PUT_TX_BLOB 0x34
-#define CMD_PUT_TX_RAW 0x35
+#define CMD_PUT_FONT 0x40
+#define CMD_PUT_IMG 0x41
 
-#define CMD_LOAD_FONT_FILE 0X37
-#define CMD_LOAD_FONT_BLOB 0X38
-#define CMD_FREE_FONT 0X39
+
+// #define CMD_QUERY_STATS 0x21
+// #define CMD_RESHAPE 0x22
+// #define CMD_POSITION 0x23
+// #define CMD_FOCUS 0x24
+// #define CMD_ICONIFY 0x25
+// #define CMD_MAXIMIZE 0x26
+// #define CMD_RESTORE 0x27
+// #define CMD_SHOW 0x28
+// #define CMD_HIDE 0x29
+
+// #define CMD_NEW_TX_ID 0x32
+// #define CMD_FREE_TX_ID 0x33
+// #define CMD_PUT_TX_BLOB 0x34
+// #define CMD_PUT_TX_RAW 0x35
+
+// #define CMD_LOAD_FONT_FILE 0X37
+// #define CMD_LOAD_FONT_BLOB 0X38
+// #define CMD_FREE_FONT 0X39
 
 // here to test recovery
 #define CMD_CRASH 0xFE
@@ -88,31 +98,11 @@ The caller will typically be erlang, so use the 2-byte length indicator
 // frame rate of the application
 #define STDIO_TIMEOUT MILLISECONDS_32
 
-// https://stackoverflow.com/questions/2182002/convert-big-endian-to-little-endian-in-c-without-using-provided-func
-#define SWAP_UINT16(x) (((x) >> 8) | ((x) << 8))
-#define SWAP_UINT32(x)                                                         \
-  (((x) >> 24) | (((x) &0x00FF0000) >> 8) | (((x) &0x0000FF00) << 8) |         \
-   ((x) << 24))
-
-static bool f_little_endian;
 
 //=============================================================================
 // raw comms with host app
 // from erl_comm.c
 // http://erlang.org/doc/tutorial/c_port.html#id64377
-
-void test_endian()
-{
-  uint32_t i      = 0x01234567;
-  f_little_endian = (*((uint8_t*) (&i))) == 0x67;
-}
-
-//---------------------------------------------------------
-void swap_little_endian_uint(uint32_t* target) {
-  if (f_little_endian) {
-    *target = SWAP_UINT32(*target);
-}
-}
 
 //---------------------------------------------------------
 // the length indicator from erlang is always big-endian
@@ -123,10 +113,9 @@ int write_cmd(byte* buf, unsigned int len)
   // since this can be called from both the main and comms thread, need to
   // synchronize it
   // if ( pthread_rwlock_wrlock(&comms_out_lock) == 0 ) {
-  uint32_t len_big = len;
-  if (f_little_endian)
-    len_big = SWAP_UINT32(len_big);
-  write_exact((byte*) &len_big, sizeof(uint32_t));
+  uint32_t cmd_len = len;
+  cmd_len = hton_ui32(cmd_len);
+  write_exact((byte*) &cmd_len, sizeof(uint32_t));
   written = write_exact(buf, len);
 
   return written;
@@ -163,13 +152,36 @@ void send_puts(const char* msg)
   uint32_t cmd_len = msg_len + sizeof(uint32_t);
   uint32_t cmd     = MSG_OUT_PUTS;
 
-  if (f_little_endian)
-    cmd_len = SWAP_UINT32(cmd_len);
+  cmd_len = ntoh_ui32(cmd_len);
 
   write_exact((byte*) &cmd_len, sizeof(uint32_t));
   write_exact((byte*) &cmd, sizeof(uint32_t));
   write_exact((byte*) msg, msg_len);
 }
+
+
+//---------------------------------------------------------
+void put_sp( const char* msg, void* p ) {
+  char buff[400];
+  sprintf(buff, "%s %p", msg, p);
+  send_puts(buff);
+}
+
+//---------------------------------------------------------
+void put_sn( const char* msg, int n ) {
+  char buff[400];
+  sprintf(buff, "%s %d", msg, n);
+  send_puts(buff);
+}
+
+//---------------------------------------------------------
+void put_sf( const char* msg, float f ) {
+  char buff[400];
+  sprintf(buff, "%s %f", msg, f);
+  send_puts(buff);
+}
+
+
 
 //---------------------------------------------------------
 void send_write(const char* msg)
@@ -178,8 +190,7 @@ void send_write(const char* msg)
   uint32_t cmd_len = msg_len + sizeof(uint32_t);
   uint32_t cmd     = MSG_OUT_WRITE;
 
-  if (f_little_endian)
-    cmd_len = SWAP_UINT32(cmd_len);
+  cmd_len = ntoh_ui32(cmd_len);
 
   write_exact((byte*) &cmd_len, sizeof(uint32_t));
   write_exact((byte*) &cmd, sizeof(uint32_t));
@@ -192,8 +203,7 @@ void send_inspect(void* data, int length)
   uint32_t cmd_len = length + sizeof(uint32_t);
   uint32_t cmd     = MSG_OUT_INSPECT;
 
-  if (f_little_endian)
-    cmd_len = SWAP_UINT32(cmd_len);
+  ntoh_ui32(cmd_len);
 
   write_exact((byte*) &cmd_len, sizeof(uint32_t));
   write_exact((byte*) &cmd, sizeof(uint32_t));
@@ -207,8 +217,7 @@ void send_static_texture_miss(const char* key)
   uint32_t cmd_len = msg_len + sizeof(uint32_t);
   uint32_t cmd     = MSG_OUT_STATIC_TEXTURE_MISS;
 
-  if (f_little_endian)
-    cmd_len = SWAP_UINT32(cmd_len);
+  ntoh_ui32(cmd_len);
 
   write_exact((byte*) &cmd_len, sizeof(uint32_t));
   write_exact((byte*) &cmd, sizeof(uint32_t));
@@ -222,8 +231,7 @@ void send_dynamic_texture_miss(const char* key)
   uint32_t cmd_len = msg_len + sizeof(uint32_t);
   uint32_t cmd     = MSG_OUT_DYNAMIC_TEXTURE_MISS;
 
-  if (f_little_endian)
-    cmd_len = SWAP_UINT32(cmd_len);
+  ntoh_ui32(cmd_len);
 
   write_exact((byte*) &cmd_len, sizeof(uint32_t));
   write_exact((byte*) &cmd, sizeof(uint32_t));
@@ -237,8 +245,7 @@ void send_font_miss(const char* key)
   uint32_t cmd_len = msg_len + sizeof(uint32_t);
   uint32_t cmd     = MSG_OUT_FONT_MISS;
 
-  if (f_little_endian)
-    cmd_len = SWAP_UINT32(cmd_len);
+  ntoh_ui32(cmd_len);
 
   write_exact((byte*) &cmd_len, sizeof(uint32_t));
   write_exact((byte*) &cmd, sizeof(uint32_t));
@@ -321,9 +328,18 @@ PACK(typedef struct msg_mouse_button_t
 void send_mouse_button(int button, int action, int mods, float xpos, float ypos)
 {
   msg_mouse_button_t msg = {
-      MSG_OUT_MOUSE_BUTTON, button, action, mods, xpos, ypos};
+    MSG_OUT_MOUSE_BUTTON,
+    button,
+    action,
+    mods,
+    xpos,
+    ypos
+  };
   write_cmd((byte*) &msg, sizeof(msg_mouse_button_t));
 }
+  // #define hton_ui16(x) (ntoh_ui16(x))
+  // #define hton_ui32(x) (ntoh_ui32(x))
+  // #define hton_f32(x) (ntoh_f32(x))
 
 //---------------------------------------------------------
 PACK(typedef struct msg_scroll_t
@@ -357,36 +373,48 @@ void send_cursor_enter(int entered, float xpos, float ypos)
 }
 
 //---------------------------------------------------------
-void send_close()
+PACK(typedef struct msg_close_t
 {
-  uint32_t msg = MSG_OUT_CLOSE;
-  write_cmd((byte*) &msg, sizeof(uint32_t));
+  uint32_t msg_id;
+  uint32_t reaspn;
+}) msg_close_t;
+void send_close( int reason )
+{
+  msg_close_t msg = { MSG_OUT_CLOSE, reason };
+  write_cmd((byte*) &msg, sizeof(msg_close_t));
 }
 
 //---------------------------------------------------------
-PACK(typedef struct msg_ready_t
+PACK(typedef struct img_miss_t
 {
   uint32_t msg_id;
-  int32_t  empty_dl;
-}) msg_ready_t;
-void send_ready(int root_id)
+  uint32_t img_id;
+}) img_miss_t;
+void send_image_miss( unsigned int img_id )
 {
-  msg_ready_t msg = {MSG_OUT_READY, root_id};
-  write_cmd((byte*) &msg, sizeof(msg_ready_t));
+  img_miss_t msg = { MSG_IMG_MISS, img_id };
+  write_cmd((byte*) &msg, sizeof(img_miss_t));
 }
 
 //---------------------------------------------------------
-PACK(typedef struct msg_draw_ready_t
+void send_ready()
 {
-  uint32_t msg_id;
-  uint32_t id;
-}) msg_draw_ready_t;
-
-void send_draw_ready(unsigned int id)
-{
-  msg_ready_t msg = {MSG_OUT_DRAW_READY, id};
-  write_cmd((byte*) &msg, sizeof(msg_draw_ready_t));
+  uint32_t msg_id = MSG_OUT_READY;
+  write_cmd((byte*) &msg_id, sizeof(msg_id));
 }
+
+// //---------------------------------------------------------
+// PACK(typedef struct msg_draw_ready_t
+// {
+//   uint32_t msg_id;
+//   uint32_t id;
+// }) msg_draw_ready_t;
+
+// void send_draw_ready(unsigned int id)
+// {
+//   msg_ready_t msg = {MSG_OUT_DRAW_READY, id};
+//   write_cmd((byte*) &msg, sizeof(msg_draw_ready_t));
+// }
 
 //=============================================================================
 // incoming messages
@@ -485,270 +513,182 @@ void receive_crash()
   exit(EXIT_FAILURE);
 }
 
+
 //---------------------------------------------------------
-void receive_render(int* p_msg_length, GLFWwindow* window)
+void render(GLFWwindow* window)
 {
   window_data_t* p_data = glfwGetWindowUserPointer(window);
-  if (p_data == NULL)
-  {
-    send_puts("receive_set_graph BAD WINDOW");
-    return;
-  }
 
-  // get the draw list id to compile
-  GLuint id;
-  read_bytes_down(&id, sizeof(GLuint), p_msg_length);
+  // render the scene
+  nvgBeginFrame(p_data->context.p_ctx, p_data->context.window_width,
+                p_data->context.window_height,
+                p_data->context.frame_ratio.x);
 
-  // extract the render script itself
-  void* p_script = malloc(*p_msg_length);
-  read_bytes_down(p_script, *p_msg_length, p_msg_length);
+  // render the root script
+  render_script( 0, p_data->context.p_ctx );
 
-  // save the script away for later
-  put_script(p_data, id, p_script);
+  // End frame and swap front and back buffers
+  nvgEndFrame(p_data->context.p_ctx);
+  glfwSwapBuffers(window);
 
-  // send the signal that drawing is done
-  send_draw_ready(id);
-
-  // post a message to kick the display loop
-  glfwPostEmptyEvent();
+  // all done
+  send_ready();
 }
 
+
+
 //---------------------------------------------------------
-void receive_clear(int* p_msg_length, GLFWwindow* window)
+void put_font(int* p_msg_length, GLFWwindow* window)
 {
   window_data_t* p_data = glfwGetWindowUserPointer(window);
-  if (p_data == NULL)
-  {
-    send_puts("receive_set_graph BAD WINDOW");
-    return;
-  }
-
-  // get and validate the dl_id
-  GLuint id;
-  read_bytes_down(&id, sizeof(GLuint), p_msg_length);
-
-  // delete the list
-  delete_script(p_data, id);
-}
-
-//---------------------------------------------------------
-void receive_set_root(int* p_msg_length, GLFWwindow* window)
-{
-  window_data_t* p_data = glfwGetWindowUserPointer(window);
-  if (p_data == NULL)
-  {
-    send_puts("receive_set_graph BAD WINDOW");
-    return;
-  }
-
-  // get and validate the dl_id
-  GLint id;
-  read_bytes_down(&id, sizeof(GLint), p_msg_length);
-
-  // update the current_dl with the incoming id
-  p_data->root_script = id;
-
-  // post a message to kick the display loop
-  glfwPostEmptyEvent();
-}
-
-//---------------------------------------------------------
-PACK(typedef struct clear_color_t
-{
-  GLuint r;
-  GLuint g;
-  GLuint b;
-  GLuint a;
-}) clear_color_t;
-void receive_clear_color(int* p_msg_length)
-{
-  // get the clear_color
-  clear_color_t cc;
-  read_bytes_down(&cc, sizeof(clear_color_t), p_msg_length);
-  glClearColor(cc.r / 255.0, cc.g / 255.0, cc.b / 255.0, cc.a / 255.0);
-}
-
-//---------------------------------------------------------
-PACK(typedef struct font_info_t
-{
-  GLuint name_length;
-  GLuint data_length;
-}) font_info_t;
-
-void receive_load_font_file(int* p_msg_length, GLFWwindow* window)
-{
-  window_data_t* p_data = glfwGetWindowUserPointer(window);
-  if (p_data == NULL)
-  {
-    send_puts("receive_set_graph BAD WINDOW");
-    return;
-  }
   NVGcontext* p_ctx = p_data->context.p_ctx;
 
-  font_info_t font_info;
-  read_bytes_down(&font_info, sizeof(font_info_t), p_msg_length);
+  // read the size of the font name
+  uint32_t name_bytes;
+  read_bytes_down(&name_bytes, sizeof(uint32_t), p_msg_length);
 
-  // create the name and data
-  void* p_name = malloc(font_info.name_length);
-  read_bytes_down(p_name, font_info.name_length, p_msg_length);
+  // allocate and copy in the font name
+  char* p_name = malloc( name_bytes + 1 );
+  if ( !p_name ) return;
+  read_bytes_down(p_name, name_bytes, p_msg_length);
+  // make sure the name is null terminated
+  p_name[name_bytes] = 0;
 
-  void* p_path = malloc(font_info.data_length);
-  read_bytes_down(p_path, font_info.data_length, p_msg_length);
+  // allocate and read the font blob
+  unsigned int blob_bytes = *p_msg_length;
+  void* p_blob = malloc( blob_bytes );
+  read_bytes_down( p_blob, blob_bytes, p_msg_length );
 
-  // only load the font if it is not already loaded!
-  if (nvgFindFont(p_ctx, p_name) < 0)
-  {
-    nvgCreateFont(p_ctx, p_name, p_path);
-  }
-
-  free(p_name);
-  free(p_path);
-}
-
-//---------------------------------------------------------
-void receive_load_font_blob(int* p_msg_length, GLFWwindow* window)
-{
-  window_data_t* p_data = glfwGetWindowUserPointer(window);
-  if (p_data == NULL)
-  {
-    send_puts("receive_set_graph BAD WINDOW");
-    return;
-  }
-  NVGcontext* p_ctx = p_data->context.p_ctx;
-
-  font_info_t font_info;
-  read_bytes_down(&font_info, sizeof(font_info_t), p_msg_length);
-
-  // create the name and data
-  void* p_name = malloc(font_info.name_length);
-  read_bytes_down(p_name, font_info.name_length, p_msg_length);
-
-  void* p_blob = malloc(font_info.data_length);
-  read_bytes_down(p_blob, font_info.data_length, p_msg_length);
-
-  // only load the font if it is not already loaded!
-  if (nvgFindFont(p_ctx, p_name) < 0)
-  {
-    nvgCreateFontMem(p_ctx, p_name, p_blob, font_info.data_length, true);
+  // if the font is NOT loaded, then put it into nvg
+  if (nvgFindFont(p_ctx, p_name) < 0) {
+    nvgCreateFontMem(p_ctx, p_name, p_blob, blob_bytes, true);
+  } else {
+    free( p_blob );
   }
 
   free(p_name);
 }
 
-//---------------------------------------------------------
-bool dispatch_message(int msg_length, GLFWwindow* window)
-{
 
-  bool render = false;
+//---------------------------------------------------------
+void dispatch_message( int msg_length, GLFWwindow* window )
+{
 
   // read the message id
   uint32_t msg_id;
   read_bytes_down(&msg_id, sizeof(uint32_t), &msg_length);
 
-  char buff[200];
-
-  check_gl_error("starting error: ");
+  // put_sn( "dispatch_message:", msg_id );
 
   switch (msg_id)
   {
     case CMD_QUIT:
-      receive_quit(window);
-      return false;
+      receive_quit( window );
+      return;
 
-    case CMD_RENDER_GRAPH:
-      receive_render(&msg_length, window);
-      render = true;
-      break;
-    case CMD_CLEAR_GRAPH:
-      receive_clear(&msg_length, window);
-      render = true;
-      break;
-    case CMD_SET_ROOT:
-      receive_set_root(&msg_length, window);
-      render = true;
+    case CMD_PUT_SCRIPT:
+      put_script( &msg_length );
       break;
 
-    case CMD_CLEAR_COLOR:
-      receive_clear_color(&msg_length);
-      render = true;
+    case CMD_DEL_SCRIPT:
+      delete_script( &msg_length );
+      break;
+
+    case CMD_RESET:
+      reset_scripts();
+      reset_images(((window_data_t*)glfwGetWindowUserPointer(window))->context.p_ctx);
+      break;
+
+    case CMD_RENDER:
+      render( window );
       break;
 
     case CMD_INPUT:
       receive_input(&msg_length, window);
       break;
 
-    case CMD_QUERY_STATS:
-      receive_query_stats(window);
-      break;
-    case CMD_RESHAPE:
-      receive_reshape(&msg_length, window);
-      break;
-    case CMD_POSITION:
-      receive_position(&msg_length, window);
+    case CMD_PUT_FONT:
+      put_font( &msg_length, window );
       break;
 
-    case CMD_ICONIFY:
-      glfwIconifyWindow(window);
+    case CMD_PUT_IMG:
+      put_image(
+        &msg_length,
+        ((window_data_t*)glfwGetWindowUserPointer(window))->context.p_ctx
+      );
       break;
 
-    case CMD_RESTORE:
-      glfwRestoreWindow(window);
-      break;
-    case CMD_SHOW:
-      glfwShowWindow(window);
-      break;
-    case CMD_HIDE:
-      glfwHideWindow(window);
-      break;
+    // case CMD_QUERY_STATS:
+    //   receive_query_stats(window);
+    //   break;
+    // case CMD_RESHAPE:
+    //   receive_reshape(&msg_length, window);
+    //   break;
+    // case CMD_POSITION:
+    //   receive_position(&msg_length, window);
+    //   break;
 
-    // font handling
-    case CMD_LOAD_FONT_FILE:
-      receive_load_font_file(&msg_length, window);
-      render = true;
-      break;
-    case CMD_LOAD_FONT_BLOB:
-      receive_load_font_blob(&msg_length, window);
-      render = true;
-      break;
+    // case CMD_ICONIFY:
+    //   glfwIconifyWindow(window);
+    //   break;
 
-    // the next three are in tx.c
-    case CMD_PUT_TX_BLOB:
-      receive_put_tx_blob(&msg_length, window);
-      render = true;
-      break;
+    // case CMD_RESTORE:
+    //   glfwRestoreWindow(window);
+    //   break;
+    // case CMD_SHOW:
+    //   glfwShowWindow(window);
+    //   break;
+    // case CMD_HIDE:
+    //   glfwHideWindow(window);
+    //   break;
 
-    case CMD_PUT_TX_RAW:
-      receive_put_tx_pixels(&msg_length, window);
-      render = true;
-      break;
+    // // font handling
+    // case CMD_LOAD_FONT_FILE:
+    //   receive_load_font_file(&msg_length, window);
+    //   render = true;
+    //   break;
+    // case CMD_LOAD_FONT_BLOB:
+    //   receive_load_font_blob(&msg_length, window);
+    //   render = true;
+    //   break;
 
-    case CMD_FREE_TX_ID:
-      receive_free_tx_id(&msg_length, window);
-      break;
+    // // the next three are in tx.c
+    // case CMD_PUT_TX_BLOB:
+    //   receive_put_tx_blob(&msg_length, window);
+    //   render = true;
+    //   break;
+
+    // case CMD_PUT_TX_RAW:
+    //   receive_put_tx_pixels(&msg_length, window);
+    //   render = true;
+    //   break;
+
+    // case CMD_FREE_TX_ID:
+    //   receive_free_tx_id(&msg_length, window);
+    //   break;
 
     case CMD_CRASH:
       receive_crash();
       break;
 
     default:
-      sprintf(buff, "Unknown message: 0x%02X", msg_id);
-      send_puts(buff);
+      put_sn( "Unknown message:", msg_id );
   }
 
   // if there are any bytes left to read in the message, need to get rid of them
   // here...
   if (msg_length > 0)
   {
-    sprintf(buff, "WARNING Excess message bytes! %d", msg_length);
-    send_puts(buff);
+    put_sn( "Excess message bytes:", msg_length );
+    put_sn( "message id:", msg_id );
     void* p = malloc(msg_length);
     read_bytes_down(p, msg_length, &msg_length);
     free(p);
   }
 
-  check_gl_error(buff);
+  check_gl_error();
 
-  return render;
+  return;
 }
 
 //=============================================================================
@@ -763,7 +703,7 @@ uint64_t get_time_stamp()
 
 // read from the stdio in buffer and act on one message. Return true
 // if we need to redraw the screen. false if we do not
-bool handle_stdio_in(GLFWwindow* window)
+void handle_stdio_in(GLFWwindow* window)
 {
   int64_t        time_remaining = STDIO_TIMEOUT;
   int64_t        end_time       = get_time_stamp() + STDIO_TIMEOUT;
@@ -780,12 +720,11 @@ bool handle_stdio_in(GLFWwindow* window)
       break;
 
     // process the message
-    redraw = dispatch_message(len, window) || redraw;
+    dispatch_message(len, window);
 
     // see if time is remaining, so we can process another one
     time_remaining = end_time - get_time_stamp();
   }
 
-  // return false to not cause a redraw
-  return redraw;
+  return;
 }

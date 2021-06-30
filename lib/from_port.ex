@@ -1,20 +1,13 @@
-#
-#  Created by Boyd Multerer on 02/15/18.
-#  Copyright © 2018 Kry10 Industries. All rights reserved.
-#
-# a collection of functions for handling messages from the port
-#
-defmodule Scenic.Driver.Glfw.Input do
-  use Bitwise
+defmodule Scenic.Driver.Glfw.FromPort do
 
-  alias Scenic.Driver.Glfw.Cache
-  alias Scenic.Driver.Glfw.Font
+  # alias Scenic.Driver.Glfw.Cache
+  # alias Scenic.Driver.Glfw.Font
   alias Scenic.ViewPort
   alias Scenic.Utilities
+  # alias Scenic.Driver.Glfw.ToPort
 
   require Logger
 
-  # import IEx
 
   # incoming message ids
   @msg_close_id 0x00
@@ -24,7 +17,7 @@ defmodule Scenic.Driver.Glfw.Input do
   @msg_inspect_id 0x04
   @msg_reshape_id 0x05
   @msg_ready_id 0x06
-  @msg_draw_ready_id 0x07
+  # @msg_draw_ready_id 0x07
 
   @msg_key_id 0x0A
   @msg_char_id 0x0B
@@ -33,10 +26,11 @@ defmodule Scenic.Driver.Glfw.Input do
   @msg_mouse_scroll_id 0x0E
   @msg_cursor_enter_id 0x0F
 
-  @msg_static_texture_miss 0x20
-  @msg_dynamic_texture_miss 0x21
+  # @msg_static_texture_miss 0x20
+  # @msg_dynamic_texture_miss 0x21
 
-  @msg_font_miss 0x22
+  # @msg_font_miss 0x22
+  # @msg_texture_miss 0x23
 
   @debounce_speed 16
 
@@ -47,20 +41,8 @@ defmodule Scenic.Driver.Glfw.Input do
   def handle_debounce(
         type,
         %{
-          draw_busy: true
-        } = state
-      ) do
-    # effectively skip a frame
-    Process.send_after(self(), {:debounce, type}, @debounce_speed)
-    {:noreply, state}
-  end
-
-  def handle_debounce(
-        type,
-        %{
           debounce: debounce,
           viewport: viewport,
-          draw_busy: false
         } = state
       ) do
     case debounce[type] do
@@ -103,49 +85,12 @@ defmodule Scenic.Driver.Glfw.Input do
   # --------------------------------------------------------
   def handle_port_message(
         <<
-          @msg_ready_id::unsigned-integer-size(32)-native,
-          start_dl::integer-size(32)-native
+          @msg_ready_id::unsigned-integer-size(32)-native
         >>,
-        %{
-          viewport: viewport,
-          dl_block_size: dl_block_size
-        } = state
+        state
       ) do
-    state =
-      state
-      |> Map.put(:ready, true)
-      |> Map.put(:start_dl, start_dl)
-      |> Map.put(:end_dl, start_dl + dl_block_size - 1)
-      |> Map.put(:last_used_dl, start_dl)
-
-    # |> Glfw.Font.initialize()
-
-    GenServer.cast(viewport, {:driver_ready, self()})
-
-    {:noreply, state}
-  end
-
-  # --------------------------------------------------------
-  # this feels like it should live in graph.ex, but it is input from
-  # the driver, so it is here...
-  def handle_port_message(
-        <<
-          @msg_draw_ready_id::unsigned-integer-size(32)-native,
-          id::unsigned-integer-size(32)-native
-        >>,
-        %{
-          currently_drawing: currently_drawing
-        } = state
-      ) do
-    # remove the id from the currently_drawing list
-    currently_drawing = List.delete(currently_drawing, id)
-    state = %{state | currently_drawing: currently_drawing}
-
-    # if the current draw is done, mark it so
-    case currently_drawing do
-      [] -> {:noreply, %{state | draw_busy: false}}
-      _ -> {:noreply, state}
-    end
+    Process.send( self(), :debounce_scripts, [] )
+    {:noreply, %{state | busy: false}}
   end
 
   # --------------------------------------------------------
@@ -170,12 +115,25 @@ defmodule Scenic.Driver.Glfw.Input do
     {:noreply, state}
   end
 
+
+
   # --------------------------------------------------------
   def handle_port_message(
-        <<@msg_close_id::unsigned-integer-size(32)-native>>,
-        %{viewport: viewport} = state
+        <<
+          @msg_close_id::unsigned-integer-size(32)-native,
+          reason::unsigned-integer-size(32)-native
+        >>,
+        %{viewport: viewport, on_close: on_close} = state
       ) do
-    GenServer.cast(viewport, :user_close)
+
+    case on_close do
+      :stop_driver -> ViewPort.stop_driver( viewport, self() )
+      :stop_viewport -> ViewPort.stop( viewport )
+      :stop_system -> System.stop( reason )
+      :halt_system -> System.halt( reason )
+      {module, _fun, 1} -> module.fun( reason )
+    end
+
     {:noreply, Map.put(state, :closing, true)}
   end
 
@@ -184,7 +142,7 @@ defmodule Scenic.Driver.Glfw.Input do
         <<@msg_puts_id::unsigned-integer-size(32)-native>> <> msg,
         state
       ) do
-    IO.puts(msg)
+    IO.inspect(msg, label: "glfw_puts")
     {:noreply, state}
   end
 
@@ -203,39 +161,6 @@ defmodule Scenic.Driver.Glfw.Input do
         state
       ) do
     IO.inspect(msg)
-    {:noreply, state}
-  end
-
-  # --------------------------------------------------------
-  def handle_port_message(
-        <<
-          @msg_static_texture_miss::unsigned-integer-size(32)-native
-        >> <> key,
-        %{port: port} = state
-      ) do
-    Scenic.Cache.Static.Texture.subscribe(key, :all)
-    Cache.load_static_texture(key, port)
-    {:noreply, state}
-  end
-
-  # --------------------------------------------------------
-  def handle_port_message(
-        <<
-          @msg_dynamic_texture_miss::unsigned-integer-size(32)-native
-        >> <> key,
-        %{port: port} = state
-      ) do
-    Scenic.Cache.Dynamic.Texture.subscribe(key, :all)
-    Cache.load_dynamic_texture(key, port)
-    {:noreply, state}
-  end
-
-  # --------------------------------------------------------
-  def handle_port_message(
-        <<@msg_font_miss::unsigned-integer-size(32)-native>> <> key,
-        %{port: port} = state
-      ) do
-    Font.load_font(key, port)
     {:noreply, state}
   end
 
@@ -298,7 +223,7 @@ defmodule Scenic.Driver.Glfw.Input do
         >>,
         %{viewport: viewport} = state
       ) do
-    button = button_to_atom(button)
+    # button = button_to_atom(button)
     action = action_to_atom(action)
 
     ViewPort.input(viewport, {:cursor_button, {button, action, mods, {x, y}}})
@@ -332,8 +257,7 @@ defmodule Scenic.Driver.Glfw.Input do
         >>,
         %{viewport: viewport} = state
       ) do
-    ViewPort.input(viewport, {:viewport_exit, {x_pos, y_pos}})
-
+    ViewPort.input( viewport, {:viewport, {:exit, {x_pos, y_pos}}} )
     {:noreply, state}
   end
 
@@ -347,8 +271,7 @@ defmodule Scenic.Driver.Glfw.Input do
         >>,
         %{viewport: viewport} = state
       ) do
-    ViewPort.input(viewport, {:viewport_enter, {x_pos, y_pos}})
-
+    ViewPort.input( viewport, {:viewport, {:enter, {x_pos, y_pos}}} )
     {:noreply, state}
   end
 
@@ -468,34 +391,6 @@ defmodule Scenic.Driver.Glfw.Input do
   end
 
   # --------------------------------------------------------
-  # defined to follow the Glfw modifier keys
-  # http://www.Glfw.org/docs/latest/group__mods.html
-
-  #  @key_mod_shift    0x0001
-  #  @key_mod_control  0x0002
-  #  @key_mod_alt      0x0004
-  #  @key_mod_super    0x0008
-  #  @key_mods         [
-  #    {@key_mod_shift,   :shift},
-  #    {@key_mod_control, :control},
-  #    {@key_mod_alt,     :alt},
-  #    {@key_mod_super,   :super}
-  #  ]
-  #
-  #  defp mods_to_atoms( key_mods )
-  #  defp mods_to_atoms( key_mods ) when is_integer(key_mods) do
-  #    Enum.reduce(@key_mods, [], fn({mask,mod_atom}, acc) -> 
-  #        case Bitwise.band(mask, key_mods) do
-  #          0 -> acc
-  #          _ -> [mod_atom | acc]
-  #        end
-  #    end)
-  #  end
-  #  defp mods_to_atoms( mods ) do
-  #    raise "Driver.Glfw recieved unknown mods: #{inspect(mods)}"
-  #  end
-
-  # --------------------------------------------------------
   defp action_to_atom(action)
   defp action_to_atom(0), do: :release
   defp action_to_atom(1), do: :press
@@ -506,22 +401,4 @@ defmodule Scenic.Driver.Glfw.Input do
   defp codepoint_to_char(codepoint_to_atom)
   defp codepoint_to_char(cp), do: <<cp::utf8>>
 
-  # --------------------------------------------------------
-  defp button_to_atom(0), do: :left
-  defp button_to_atom(1), do: :right
-  defp button_to_atom(_), do: :unknown
-
-  # --------------------------------------------------------
-  #  defp input_type_to_flags( type )
-  #  defp input_type_to_flags( types ) when is_list(types) do
-  #    Enum.reduce(types, 0, &(input_type_to_flags(&1) ||| &2) )
-  #  end
-  #  defp input_type_to_flags( :key ),            do: 0x0001
-  #  defp input_type_to_flags( :codepoint ),      do: 0x0002
-  #  defp input_type_to_flags( :cursor_pos ),     do: 0x0004
-  #  defp input_type_to_flags( :cursor_button ),   do: 0x0008
-  #  defp input_type_to_flags( :cursor_scroll ),   do: 0x0010
-  #  defp input_type_to_flags( :cursor_enter ),    do: 0x0020
-  #  defp input_type_to_flags( :all ),            do: 0xFFFF
-  #  defp input_type_to_flags( type ), do: raise Error, message: "Unknown input type: #{inspect(type)}"
 end
