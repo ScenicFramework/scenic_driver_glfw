@@ -1,5 +1,4 @@
 defmodule Scenic.Driver.Glfw.FromPort do
-
   # alias Scenic.Driver.Glfw.Cache
   # alias Scenic.Driver.Glfw.Font
   alias Scenic.ViewPort
@@ -7,7 +6,6 @@ defmodule Scenic.Driver.Glfw.FromPort do
   # alias Scenic.Driver.Glfw.ToPort
 
   require Logger
-
 
   # incoming message ids
   @msg_close_id 0x00
@@ -42,7 +40,7 @@ defmodule Scenic.Driver.Glfw.FromPort do
         type,
         %{
           debounce: debounce,
-          viewport: viewport,
+          viewport: viewport
         } = state
       ) do
     case debounce[type] do
@@ -89,7 +87,7 @@ defmodule Scenic.Driver.Glfw.FromPort do
         >>,
         state
       ) do
-    Process.send( self(), :debounce_scripts, [] )
+    Process.send(self(), :debounce_scripts, [])
     {:noreply, %{state | busy: false}}
   end
 
@@ -115,8 +113,6 @@ defmodule Scenic.Driver.Glfw.FromPort do
     {:noreply, state}
   end
 
-
-
   # --------------------------------------------------------
   def handle_port_message(
         <<
@@ -125,13 +121,12 @@ defmodule Scenic.Driver.Glfw.FromPort do
         >>,
         %{viewport: viewport, on_close: on_close} = state
       ) do
-
     case on_close do
-      :stop_driver -> ViewPort.stop_driver( viewport, self() )
-      :stop_viewport -> ViewPort.stop( viewport )
-      :stop_system -> System.stop( reason )
-      :halt_system -> System.halt( reason )
-      {module, _fun, 1} -> module.fun( reason )
+      :stop_driver -> ViewPort.stop_driver(viewport, self())
+      :stop_viewport -> ViewPort.stop(viewport)
+      :stop_system -> System.stop(reason)
+      :halt_system -> System.halt(reason)
+      {module, _fun, 1} -> module.fun(reason)
     end
 
     {:noreply, Map.put(state, :closing, true)}
@@ -257,7 +252,7 @@ defmodule Scenic.Driver.Glfw.FromPort do
         >>,
         %{viewport: viewport} = state
       ) do
-    ViewPort.input( viewport, {:viewport, {:exit, {x_pos, y_pos}}} )
+    ViewPort.input(viewport, {:viewport, {:exit, {x_pos, y_pos}}})
     {:noreply, state}
   end
 
@@ -271,7 +266,7 @@ defmodule Scenic.Driver.Glfw.FromPort do
         >>,
         %{viewport: viewport} = state
       ) do
-    ViewPort.input( viewport, {:viewport, {:enter, {x_pos, y_pos}}} )
+    ViewPort.input(viewport, {:viewport, {:enter, {x_pos, y_pos}}})
     {:noreply, state}
   end
 
@@ -400,5 +395,4 @@ defmodule Scenic.Driver.Glfw.FromPort do
   # --------------------------------------------------------
   defp codepoint_to_char(codepoint_to_atom)
   defp codepoint_to_char(cp), do: <<cp::utf8>>
-
 end

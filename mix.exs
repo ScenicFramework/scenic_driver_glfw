@@ -63,7 +63,6 @@ defmodule Scenic.Driver.Glfw.MixProject do
     [
       # {:scenic, "~> 0.10"},
       {:scenic, git: "https://github.com/boydm/scenic.git", branch: "v0.11"},
-      
       {:elixir_make, "~> 0.6.2", runtime: false},
       {:ex_doc, ">= 0.0.0", only: [:dev]},
       {:dialyxir, "~> 1.1", only: :dev, runtime: false}
