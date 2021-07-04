@@ -201,10 +201,19 @@ defmodule Scenic.Driver.Glfw do
 
   # --------------------------------------------------------
   # streaming asset updates
-  def handle_info({{Stream, :put}, :texture, id}, %{port: port} = state) do
-    with {:ok, {:texture, {w, h, format}, bin}} <- Stream.fetch(id) do
+  def handle_info({{Stream, :put}, Stream.Image, id}, %{port: port} = state) do
+    with {:ok, {Stream.Bitmap, {w, h, _mime}, bin}} <- Stream.fetch(id) do
       id32 = gen_id32_from_string(id)
-      Glfw.ToPort.put_texture(port, id32, format, w, h, bin)
+      Glfw.ToPort.put_texture(port, id32, :file, w, h, bin)
+    end
+
+    {:noreply, state}
+  end
+
+  def handle_info({{Stream, :put}, Stream.Bitmap, id}, %{port: port} = state) do
+    with {:ok, {Stream.Bitmap, {w, h, type}, bin}} <- Stream.fetch(id) do
+      id32 = gen_id32_from_string(id)
+      Glfw.ToPort.put_texture(port, id32, type, w, h, bin)
     end
 
     {:noreply, state}
@@ -373,209 +382,4 @@ defmodule Scenic.Driver.Glfw do
     end
   end
 
-  #   #--------------------------------------------------------
-  #   defp do_put_scripts( ids, %{viewport: viewport, gated: true} = state ) do
-  #     case script_list( viewport, ids ) do
-  #       [] -> state
-  #       scripts -> do_do_put_scripts( scripts, state )
-  #     end
-  #   end
-  #   defp do_put_scripts( ids,
-  #     %{viewport: viewport, port: port, debounce_ms: db_ms, reset: false} = state
-  #   ) do
-  #     case script_list( viewport, ids ) do
-  #       [] ->
-  #         # there were ids, but they ended up being nothing
-  #         %{ state | dirty_ids: [], debounce_scripts: false}
-
-  #       scripts ->
-  #         state = do_do_put_scripts( scripts, state )
-  #         Glfw.ToPort.render( port )
-  #         Process.send_after( self(), :debounce_scripts, db_ms )
-  #         %{ state | dirty_ids: [], debounce_scripts: true, busy: true}
-  #     end
-  #   end
-
-  # defp do_do_put_scripts( scripts, %{port: port} = state ) do
-
-  #   Enum.reduce( scripts, state, fn({id,script}, st) ->
-  #     script = 
-  #   end)
-
-  #   Enum.reduce( scripts, state, fn({id,script}, acc) ->
-  #     # acc = ensure_fonts( script, acc )
-  #     {data, acc} =  Script.serialize( script, fn
-  #       { :font, id }, st -> serialize_font( id, st )
-  #       { :fill_image, data }, st -> serialize_fill_image( data, st )
-  #       { :fill_stream, data }, st -> serialize_fill_dynamic( data, st )
-  #       { :stroke_image, data }, st -> serialize_stroke_image( data, st )
-  #       { :draw_sprites, data }, st -> serialize_sprites( data, st )
-  #       other, st -> {other, st}
-  #     end, acc)
-  #     Glfw.ToPort.put_script( data, id, port )
-  #     acc
-  #   end)
-  # end
-
-  #   # if this is the first time we see this font, we need to send it to the renderer
-  #   defp serialize_font( id, %{fonts: fonts, port: port} = state ) do
-
-  #     # the only reason we are here is to make sure the font is loaded into the renderer
-  #     {hash, state} = with :error <- Map.fetch( fonts, id ),
-  #     {:ok, {:font, _}} <- Static.fetch(id),
-  #     {:ok, _, hash} <- Static.to_hash(id),
-  #     {:ok, bin} <- Static.load(id) do
-  #       Glfw.ToPort.put_font( port, hash, bin )
-  #       {hash, put_in( state, [:fonts, id], hash )}
-  #     else
-  #       {:ok, hash} -> {hash, state}
-  #     end
-
-  #     { do_serialize_font(hash), state }
-  #   end
-
-  #   defp serialize_fill_image( id, state ) do
-  #     {int_id, state} = ensure_static_image( id, state )
-  #     {
-  #       <<
-  #         @op_fill_image::16-big,
-  #         0::16,
-  #         int_id::unsigned-integer-32-big
-  #       >>,
-  #       state
-  #     }
-  #   end
-
-  #   defp serialize_fill_dynamic( id, %{img_id: img_id, port: port} = state ) do
-  #     # the only reason we are here is to make sure the image is loaded into the renderer
-  #     {int_id, state} = with :error <- Map.fetch( img_id, id ) do
-  #       Dynamic.subscribe(id)
-  #       {:ok, int_id, state} = reserve_image_id( id, state )
-
-  #       # It is possible for a dynamic image to be referenced before it is published
-  #       with {:ok, {:texture, {w,h,format}, bin}} <- Dynamic.fetch(id) do
-  #         Glfw.ToPort.put_texture( port, int_id, format, w, h, bin )
-  #       end
-
-  #       { int_id, state }
-  #     else
-  #       {:ok, int_id} -> {int_id, state}
-  #     end
-
-  #     {
-  #       <<
-  #         @op_fill_image::16-big,
-  #         0::16,
-  #         int_id::unsigned-integer-32-big
-  #       >>,
-  #       state
-  #     }
-  #   end
-
-  #   defp serialize_stroke_image( id, state ) do
-  #     {int_id, state} = ensure_static_image( id, state )
-  #     {
-  #       <<
-  #         @op_stroke_image::16-big,
-  #         0::16,
-  #         int_id::unsigned-integer-32-big
-  #       >>,
-  #       state
-  #     }
-  #   end
-
-  #   defp serialize_sprites( {id, cmds}, state ) do
-  #     {int_id, state} = ensure_static_image( id, state )
-  #     count = Enum.count(cmds)
-
-  #     cmds = Enum.reduce(cmds, [], fn
-  #       {{sx,sy}, {sw,sh}, {dx,dy}, {dw,dh}}, acc ->
-  #         [
-  #           <<
-  #             sx::float-32-big,
-  #             sy::float-32-big,
-  #             sw::float-32-big,
-  #             sh::float-32-big,
-  #             dx::float-32-big,
-  #             dy::float-32-big,
-  #             dw::float-32-big,
-  #             dh::float-32-big
-  #           >>
-  #           | acc
-  #         ]
-  #     end)
-  #     |> Enum.reverse()
-
-  #     binary = [
-  #       <<
-  #         @op_draw_sprites::16-big,
-  #         count::16-big,
-  #         int_id::32-big,
-  #       >>,
-  #       cmds
-  #     ]
-
-  #     { binary, state }
-  #   end
-
-  #   defp reserve_image_id(id,  %{next_image: next_image} = state ) do
-  #     {
-  #       :ok,
-  #       next_image,
-  #       state
-  #       |> put_in( [:img_id, id], next_image )
-  #       |> put_in( [:id_img, next_image], id )
-  #       |> Map.put( :next_image, next_image + 1 )
-  #     }
-  #   end
-
-  #   # only chopping the name down to 63 bytes because the default font name size
-  #   # in nvg's fontstash.h is hardcoded to 64 bytes including the null terminator
-  #   # Otherwise the default serializer would work.
-  #   # defp do_serialize_font( << name::binary-size(63), _::binary>> ) do
-  #   defp do_serialize_font( name ) when is_binary(name) do
-  #     [
-  #       <<
-  #         @op_font::16-big,
-  #         byte_size(name)::16-big
-  #       >>,
-  #       Script.padded_string(name)
-  #     ]
-  #   end
-
-  #   #--------------------------------------------------------
-  #   defp ensure_static_image( id, %{img_id: img_id, port: port} = state ) do
-  #     with :error <- Map.fetch( img_id, id ),
-  #     # {:ok, hash, _} <- Static.to_hash(id),
-  #     {:ok, {:image, {w, h, _}}} <- Static.fetch(id),
-  #     {:ok, bin} <- Static.load(id),
-  #     {:ok, int_id, state} <- reserve_image_id( id, state ) do
-  #       Glfw.ToPort.put_texture( port, int_id, :file, w, h, bin )
-  #       { int_id, state }
-  #     else
-  #       {:ok, int_id} -> {int_id, state}
-  #     end
-  #   end
-
-  #   #--------------------------------------------------------
-  #   defp script_list( viewport, ids ) do
-  #     ids
-  #     |> List.flatten()
-  #     |> Enum.uniq()
-  #     |> case do
-  #       [] -> []
-  #       ids ->
-  #         ids
-  #         |> Enum.reduce([], fn id, acc ->
-  #           case ViewPort.get_script_by_id(viewport, id) do
-  #             {:ok, script} -> [{id, script} | acc]
-  #             _ -> acc
-  #           end
-  #         end)
-  #     end
-  #   end
-
-  #   defp ensure_media( media ) do
-
-  #   end
 end
