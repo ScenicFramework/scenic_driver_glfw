@@ -381,5 +381,4 @@ defmodule Scenic.Driver.Glfw do
         :crypto.hash(:sha_256, id)
     end
   end
-
 end
