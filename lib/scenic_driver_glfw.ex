@@ -275,7 +275,7 @@ defmodule Scenic.Driver.Glfw do
     fonts =
       Enum.reduce(ids, fonts, fn id, fonts ->
         with false <- Enum.member?(fonts, id),
-             {:ok, {:font, _}} <- Static.fetch(id),
+             {:ok, {Static.Font, _}} <- Static.fetch(id),
              {:ok, _, hash} <- Static.to_hash(id),
              {:ok, bin} <- Static.load(id) do
           Glfw.ToPort.put_font(port, hash, bin)
@@ -296,7 +296,7 @@ defmodule Scenic.Driver.Glfw do
     images =
       Enum.reduce(ids, images, fn id, images ->
         with false <- Enum.member?(images, id),
-             {:ok, {:image, {w, h, _}}} <- Static.fetch(id),
+             {:ok, {Static.Image, {w, h, _}}} <- Static.fetch(id),
              {:ok, hash, _} <- Static.to_hash(id),
              {:ok, bin} <- Static.load(id) do
           Glfw.ToPort.put_texture(port, hash, :file, w, h, bin)
@@ -318,7 +318,7 @@ defmodule Scenic.Driver.Glfw do
       Enum.reduce(ids, streams, fn id, streams ->
         with false <- Enum.member?(streams, id),
              :ok <- Stream.subscribe(id),
-             {:ok, {:texture, {w, h, format}, bin}} <- Stream.fetch(id) do
+             {:ok, {Stream.Image, {w, h, format}, bin}} <- Stream.fetch(id) do
           id32 = gen_id32_from_string(id)
           Glfw.ToPort.put_texture(port, id32, format, w, h, bin)
           [id | streams]
@@ -333,7 +333,7 @@ defmodule Scenic.Driver.Glfw do
   # if this is the first time we see this font, we need to send it to the renderer
   defp serialize_font(id) when is_bitstring(id) do
     hash =
-      with {:ok, {:font, _}} <- Static.fetch(id),
+      with {:ok, {Static.Font, _}} <- Static.fetch(id),
            {:ok, _bin_hash, str_hash} <- Static.to_hash(id) do
         str_hash
       else
