@@ -1,9 +1,6 @@
 defmodule Scenic.Driver.Glfw.FromPort do
-  # alias Scenic.Driver.Glfw.Cache
-  # alias Scenic.Driver.Glfw.Font
   alias Scenic.ViewPort
   alias Scenic.Utilities
-  # alias Scenic.Driver.Glfw.ToPort
 
   require Logger
 
@@ -30,51 +27,6 @@ defmodule Scenic.Driver.Glfw.FromPort do
   # @msg_font_miss 0x22
   # @msg_texture_miss 0x23
 
-  @debounce_speed 16
-
-  # ============================================================================
-  # debounce input
-
-  # --------------------------------------------------------
-  def handle_debounce(
-        type,
-        %{
-          debounce: debounce,
-          viewport: viewport
-        } = state
-      ) do
-    case debounce[type] do
-      nil ->
-        :ok
-
-      msg ->
-        ViewPort.input(viewport, msg)
-    end
-
-    state = Utilities.Map.delete_in(state, [:debounce, type])
-    {:noreply, state}
-  end
-
-  # --------------------------------------------------------
-  defp debounce_input(
-         {type, _} = msg,
-         %{
-           debounce: debounce
-         } = state
-       ) do
-    state =
-      case debounce[type] do
-        nil ->
-          Process.send_after(self(), {:debounce, type}, @debounce_speed)
-          put_in(state, [:debounce, type], msg)
-
-        _ ->
-          put_in(state, [:debounce, type], msg)
-      end
-
-    {:noreply, state}
-  end
-
   # ============================================================================
 
   @doc false
@@ -87,7 +39,6 @@ defmodule Scenic.Driver.Glfw.FromPort do
         >>,
         state
       ) do
-    Process.send(self(), :debounce_scripts, [])
     {:noreply, %{state | busy: false}}
   end
 
@@ -100,7 +51,8 @@ defmodule Scenic.Driver.Glfw.FromPort do
           frame_width::unsigned-integer-size(32)-native,
           frame_height::unsigned-integer-size(32)-native
         >>,
-        state
+        # state
+        %{viewport: viewport} = state
       ) do
     state =
       state
@@ -108,7 +60,7 @@ defmodule Scenic.Driver.Glfw.FromPort do
       |> Map.put(:frame, {frame_width, frame_height})
       |> Map.put(:screen_factor, frame_width / window_width)
 
-    debounce_input({:viewport_reshape, {window_width, window_height}}, state)
+    ViewPort.input(viewport, {:viewport_reshape, {window_width, window_height}})
 
     {:noreply, state}
   end
@@ -201,9 +153,13 @@ defmodule Scenic.Driver.Glfw.FromPort do
           x::float-native-size(32),
           y::float-native-size(32)
         >>,
-        state
+        # state
+        %{viewport: viewport} = state
       ) do
-    debounce_input({:cursor_pos, {x, y}}, state)
+
+    ViewPort.input(viewport, {:cursor_pos, {x, y}})
+
+    {:noreply, state}
   end
 
   # --------------------------------------------------------
@@ -235,9 +191,12 @@ defmodule Scenic.Driver.Glfw.FromPort do
           x_pos::float-native-size(32),
           y_pos::float-native-size(32)
         >>,
-        state
+        # state
+        %{viewport: viewport} = state
       ) do
-    debounce_input({:cursor_scroll, {{x_offset, y_offset}, {x_pos, y_pos}}}, state)
+    input = {:cursor_scroll, {{x_offset, y_offset}, {x_pos, y_pos}}}
+
+    ViewPort.input(viewport, input)
 
     {:noreply, state}
   end
