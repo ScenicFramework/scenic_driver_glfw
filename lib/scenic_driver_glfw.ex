@@ -195,9 +195,9 @@ defmodule Scenic.Driver.Glfw do
   end
 
   # --------------------------------------------------------
-  def handle_info({:debounce, type}, state) do
-    Glfw.FromPort.handle_debounce(type, state)
-  end
+  # def handle_info({:debounce, type}, state) do
+  #   Glfw.FromPort.handle_debounce(type, state)
+  # end
 
   # --------------------------------------------------------
   # streaming asset updates

@@ -60,7 +60,7 @@ defmodule Scenic.Driver.Glfw.FromPort do
       |> Map.put(:frame, {frame_width, frame_height})
       |> Map.put(:screen_factor, frame_width / window_width)
 
-    ViewPort.input(viewport, {:viewport_reshape, {window_width, window_height}})
+    ViewPort.input(viewport, {:viewport, {:reshape, {window_width, window_height}}})
 
     {:noreply, state}
   end
