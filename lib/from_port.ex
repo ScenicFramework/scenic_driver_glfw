@@ -156,7 +156,6 @@ defmodule Scenic.Driver.Glfw.FromPort do
         # state
         %{viewport: viewport} = state
       ) do
-
     ViewPort.input(viewport, {:cursor_pos, {x, y}})
 
     {:noreply, state}
