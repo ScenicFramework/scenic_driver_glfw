@@ -259,7 +259,7 @@ defmodule Scenic.Driver.Glfw do
   end
 
   defp ensure_media(script, state) do
-    media = Script.media(script, :id)
+    media = Script.media(script)
 
     state
     |> ensure_fonts(Map.get(media, :fonts, []))
@@ -275,10 +275,10 @@ defmodule Scenic.Driver.Glfw do
     fonts =
       Enum.reduce(ids, fonts, fn id, fonts ->
         with false <- Enum.member?(fonts, id),
-             {:ok, {Static.Font, _}} <- Static.fetch(id),
-             {:ok, _, hash} <- Static.to_hash(id),
+             {:ok, {Static.Font, _}} <- Static.meta(id),
+             {:ok, str_hash} <- Static.to_hash(id),
              {:ok, bin} <- Static.load(id) do
-          Glfw.ToPort.put_font(port, hash, bin)
+          Glfw.ToPort.put_font(port, str_hash, bin)
           [id | fonts]
         else
           _ -> fonts
@@ -296,10 +296,11 @@ defmodule Scenic.Driver.Glfw do
     images =
       Enum.reduce(ids, images, fn id, images ->
         with false <- Enum.member?(images, id),
-             {:ok, {Static.Image, {w, h, _}}} <- Static.fetch(id),
-             {:ok, hash, _} <- Static.to_hash(id),
+             {:ok, {Static.Image, {w, h, _}}} <- Static.meta(id),
+             {:ok, str_hash} <- Static.to_hash(id),
+             {:ok, bin_hash} <- Base.url_decode64(str_hash, padding: false),
              {:ok, bin} <- Static.load(id) do
-          Glfw.ToPort.put_texture(port, hash, :file, w, h, bin)
+          Glfw.ToPort.put_texture(port, bin_hash, :file, w, h, bin)
           [id | images]
         else
           _ -> images
@@ -333,8 +334,8 @@ defmodule Scenic.Driver.Glfw do
   # if this is the first time we see this font, we need to send it to the renderer
   defp serialize_font(id) when is_bitstring(id) do
     hash =
-      with {:ok, {Static.Font, _}} <- Static.fetch(id),
-           {:ok, _bin_hash, str_hash} <- Static.to_hash(id) do
+      with {:ok, {Static.Font, _}} <- Static.meta(id),
+           {:ok, str_hash} <- Static.to_hash(id) do
         str_hash
       else
         err -> raise "Invalid font -> #{inspect(id)}, err: #{inspect(err)}"
