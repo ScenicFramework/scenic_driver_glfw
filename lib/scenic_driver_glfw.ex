@@ -11,7 +11,7 @@ defmodule Scenic.Driver.Glfw do
   alias Scenic.Assets.Static
   alias Scenic.Assets.Stream
 
-  # import IEx
+  import IEx
 
   @driver_ext if elem(:os.type(), 0) == :win32, do: '.exe', else: ''
   @port '/' ++ to_charlist(Mix.env()) ++ '/scenic_driver_glfw' ++ @driver_ext
@@ -202,7 +202,7 @@ defmodule Scenic.Driver.Glfw do
   # --------------------------------------------------------
   # streaming asset updates
   def handle_info({{Stream, :put}, Stream.Image, id}, %{port: port} = state) do
-    with {:ok, {Stream.Bitmap, {w, h, _mime}, bin}} <- Stream.fetch(id) do
+    with {:ok, {Stream.Image, {w, h, _mime}, bin}} <- Stream.fetch(id) do
       id32 = gen_id32_from_string(id)
       Glfw.ToPort.put_texture(port, id32, :file, w, h, bin)
     end
@@ -318,11 +318,21 @@ defmodule Scenic.Driver.Glfw do
     streams =
       Enum.reduce(ids, streams, fn id, streams ->
         with false <- Enum.member?(streams, id),
-             :ok <- Stream.subscribe(id),
-             {:ok, {Stream.Image, {w, h, format}, bin}} <- Stream.fetch(id) do
-          id32 = gen_id32_from_string(id)
-          Glfw.ToPort.put_texture(port, id32, format, w, h, bin)
-          [id | streams]
+             :ok <- Stream.subscribe(id) do
+          case Stream.fetch(id) do
+            {:ok, {Stream.Image, {w, h, _format}, bin}} ->
+              id32 = gen_id32_from_string(id)
+              Glfw.ToPort.put_texture(port, id32, :file, w, h, bin)
+              [id | streams]
+
+            {:ok, {Stream.Bitmap, {w, h, format}, bin}} ->
+              id32 = gen_id32_from_string(id)
+              Glfw.ToPort.put_texture(port, id32, format, w, h, bin)
+              [id | streams]
+
+            err ->
+              streams
+          end
         else
           _ -> streams
         end
