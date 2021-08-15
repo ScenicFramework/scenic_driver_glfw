@@ -167,7 +167,7 @@ defmodule Scenic.Driver.Glfw do
     state = do_put_scripts([ids | dirty_ids], state)
     Glfw.ToPort.render(port)
 
-    Process.send_after( self(), :debounce_scripts, ms )
+    Process.send_after(self(), :debounce_scripts, ms)
     {:noreply, %{state | debounce_scripts: true}}
   end
 
@@ -185,13 +185,13 @@ defmodule Scenic.Driver.Glfw do
 
   # Debounce time is up. Scripts did arrive, so debounce_scripts again.
   def handle_info(
-    :debounce_scripts,
-    %{dirty_ids: ids, port: port, debounce_ms: ms} = state
-  ) do
+        :debounce_scripts,
+        %{dirty_ids: ids, port: port, debounce_ms: ms} = state
+      ) do
     state = do_put_scripts(ids, state)
     Glfw.ToPort.render(port)
 
-    Process.send_after( self(), :debounce_scripts, ms )
+    Process.send_after(self(), :debounce_scripts, ms)
     {:noreply, state}
   end
 
@@ -260,13 +260,14 @@ defmodule Scenic.Driver.Glfw do
             state = ensure_media(script, state)
             {s_id, state} = ensure_script_id(id, state)
 
-            {io, state} = Script.serialize(script, state, fn
-              {:script, id}, state -> serialize_script(id, state)
-              {:font, id}, state -> {serialize_font(id), state}
-              {:fill_stream, id}, state -> {serialize_fill_stream(id), state}
-              {:stroke_stream, id}, state -> {serialize_stroke_stream(id), state}
-              other, state -> {other, state}
-            end)
+            {io, state} =
+              Script.serialize(script, state, fn
+                {:script, id}, state -> serialize_script(id, state)
+                {:font, id}, state -> {serialize_font(id), state}
+                {:fill_stream, id}, state -> {serialize_fill_stream(id), state}
+                {:stroke_stream, id}, state -> {serialize_stroke_stream(id), state}
+                other, state -> {other, state}
+              end)
 
             Glfw.ToPort.put_script(io, s_id, port)
 
@@ -380,25 +381,31 @@ defmodule Scenic.Driver.Glfw do
     ]
   end
 
-  defp ensure_script_id(script_id, %{
-    script_ids: script_ids,
-    next_script_id: next_script_id
-  } = state) when is_bitstring(script_id) do
-    case Map.fetch( script_ids, script_id ) do
-      {:ok, id} -> {id, state}
+  defp ensure_script_id(
+         script_id,
+         %{
+           script_ids: script_ids,
+           next_script_id: next_script_id
+         } = state
+       )
+       when is_bitstring(script_id) do
+    case Map.fetch(script_ids, script_id) do
+      {:ok, id} ->
+        {id, state}
+
       :error ->
         {
           next_script_id,
           state
-          |> Map.put( :script_ids, Map.put(script_ids, script_id, next_script_id) )
-          |> Map.put( :next_script_id, next_script_id + 1 )
+          |> Map.put(:script_ids, Map.put(script_ids, script_id, next_script_id))
+          |> Map.put(:next_script_id, next_script_id + 1)
         }
     end
   end
 
   defp serialize_script(script_id, state) when is_bitstring(script_id) do
     {s_id, state} = ensure_script_id(script_id, state)
-    { <<@op_draw_script::16-big, s_id::16>>, state }
+    {<<@op_draw_script::16-big, s_id::16>>, state}
   end
 
   defp serialize_fill_stream(id) when is_bitstring(id) do
