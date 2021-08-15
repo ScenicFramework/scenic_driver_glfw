@@ -11,14 +11,14 @@ defmodule Scenic.Driver.Glfw do
   alias Scenic.Assets.Static
   alias Scenic.Assets.Stream
 
-  import IEx
+  # import IEx
 
   @driver_ext if elem(:os.type(), 0) == :win32, do: '.exe', else: ''
   @port '/' ++ to_charlist(Mix.env()) ++ '/scenic_driver_glfw' ++ @driver_ext
 
   # default values
   @default_title "Driver Glfw"
-  @default_sync 15
+  @default_sync 30
 
   @opts_schema [
     name: [type: {:or, [:atom, :string]}],
@@ -31,9 +31,8 @@ defmodule Scenic.Driver.Glfw do
     ]
   ]
 
-  @debounce_ms 15
-
   # same as scenic/script.ex
+  @op_draw_script 0x0F
   @op_font 0x90
   @op_fill_image 0x63
   @op_stroke_image 0x74
@@ -55,6 +54,8 @@ defmodule Scenic.Driver.Glfw do
     executable = :code.priv_dir(:scenic_driver_glfw) ++ @port ++ to_charlist(port_args)
     port = Port.open({:spawn, executable}, [:binary, {:packet, 4}])
 
+    root_id = ViewPort.root_id()
+
     state = %{
       port: port,
       screen_factor: 1.0,
@@ -63,13 +64,15 @@ defmodule Scenic.Driver.Glfw do
       debounce: %{},
       on_close: opts[:on_close],
       media: %{},
+      script_ids: %{root_id => 0},
+      next_script_id: 1,
       dirty_ids: [],
       viewport: viewport,
       opts: opts,
       gated: false,
       debounce_scripts: false,
       debounce_redraw: false,
-      debounce_ms: @debounce_ms,
+      debounce_ms: opts[:sync_ms],
       busy: true
     }
 
@@ -99,10 +102,14 @@ defmodule Scenic.Driver.Glfw do
     Stream.unsubscribe(:all)
     Glfw.ToPort.reset_start(port)
 
+    root_id = ViewPort.root_id()
+
     # state changes
     state =
       state
-      |> Map.put(:dirty_ids, [0])
+      |> Map.put(:script_ids, %{root_id => 0})
+      |> Map.put(:next_script_id, 1)
+      |> Map.put(:dirty_ids, [root_id])
       |> Map.put(:debounce_scripts, false)
       |> Map.put(:busy, false)
       |> Map.put(:media, %{})
@@ -144,11 +151,10 @@ defmodule Scenic.Driver.Glfw do
 
   # if debouncing, store the script ids instead of sending them right away
   def handle_cast({:put_scripts, ids}, %{dirty_ids: dirty_ids, debounce_scripts: true} = state) do
-    # IO.write "."
     {:noreply, %{state | dirty_ids: [ids | dirty_ids]}}
   end
 
-  # if busy, story the script instead of sending it right away
+  # if busy, store the script instead of sending it right away
   def handle_cast({:put_scripts, ids}, %{dirty_ids: dirty_ids, busy: true} = state) do
     {:noreply, %{state | dirty_ids: [ids | dirty_ids]}}
   end
@@ -156,25 +162,36 @@ defmodule Scenic.Driver.Glfw do
   # not debouncing. Send the ids right away and start new debounce_scripts
   def handle_cast(
         {:put_scripts, ids},
-        %{dirty_ids: dirty_ids, port: port} = state
+        %{dirty_ids: dirty_ids, port: port, debounce_ms: ms} = state
       ) do
     state = do_put_scripts([ids | dirty_ids], state)
     Glfw.ToPort.render(port)
-    {:noreply, state}
+
+    Process.send_after( self(), :debounce_scripts, ms )
+    {:noreply, %{state | debounce_scripts: true}}
   end
 
   # --------------------------------------------------------
   @doc false
 
   # Debounce time is up. No scripts arrived, so stop debouncing.
+  def handle_info(:debounce_scripts, %{debounce_scripts: false} = state) do
+    {:noreply, state}
+  end
+
   def handle_info(:debounce_scripts, %{dirty_ids: []} = state) do
     {:noreply, %{state | debounce_scripts: false}}
   end
 
   # Debounce time is up. Scripts did arrive, so debounce_scripts again.
-  def handle_info(:debounce_scripts, %{dirty_ids: ids, port: port} = state) do
+  def handle_info(
+    :debounce_scripts,
+    %{dirty_ids: ids, port: port, debounce_ms: ms} = state
+  ) do
     state = do_put_scripts(ids, state)
     Glfw.ToPort.render(port)
+
+    Process.send_after( self(), :debounce_scripts, ms )
     {:noreply, state}
   end
 
@@ -239,16 +256,19 @@ defmodule Scenic.Driver.Glfw do
 
       ids ->
         Enum.reduce(ids, state, fn id, state ->
-          with {:ok, script} <- ViewPort.get_script_by_id(vp, id) do
+          with {:ok, script} <- ViewPort.get_script(vp, id) do
             state = ensure_media(script, state)
+            {s_id, state} = ensure_script_id(id, state)
 
-            Script.serialize(script, fn
-              {:font, id} -> serialize_font(id)
-              {:fill_stream, id} -> serialize_fill_stream(id)
-              {:stroke_stream, id} -> serialize_stroke_stream(id)
-              other -> other
+            {io, state} = Script.serialize(script, state, fn
+              {:script, id}, state -> serialize_script(id, state)
+              {:font, id}, state -> {serialize_font(id), state}
+              {:fill_stream, id}, state -> {serialize_fill_stream(id), state}
+              {:stroke_stream, id}, state -> {serialize_stroke_stream(id), state}
+              other, state -> {other, state}
             end)
-            |> Glfw.ToPort.put_script(id, port)
+
+            Glfw.ToPort.put_script(io, s_id, port)
 
             state
           else
@@ -330,7 +350,7 @@ defmodule Scenic.Driver.Glfw do
               Glfw.ToPort.put_texture(port, id32, format, w, h, bin)
               [id | streams]
 
-            err ->
+            _err ->
               streams
           end
         else
@@ -358,6 +378,27 @@ defmodule Scenic.Driver.Glfw do
       >>,
       Script.padded_string(hash)
     ]
+  end
+
+  defp ensure_script_id(script_id, %{
+    script_ids: script_ids,
+    next_script_id: next_script_id
+  } = state) when is_bitstring(script_id) do
+    case Map.fetch( script_ids, script_id ) do
+      {:ok, id} -> {id, state}
+      :error ->
+        {
+          next_script_id,
+          state
+          |> Map.put( :script_ids, Map.put(script_ids, script_id, next_script_id) )
+          |> Map.put( :next_script_id, next_script_id + 1 )
+        }
+    end
+  end
+
+  defp serialize_script(script_id, state) when is_bitstring(script_id) do
+    {s_id, state} = ensure_script_id(script_id, state)
+    { <<@op_draw_script::16-big, s_id::16>>, state }
   end
 
   defp serialize_fill_stream(id) when is_bitstring(id) do
