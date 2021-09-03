@@ -538,11 +538,8 @@ void render(GLFWwindow* window)
 
 
 //---------------------------------------------------------
-void put_font(int* p_msg_length, GLFWwindow* window)
+void put_font(int* p_msg_length, NVGcontext* p_ctx)
 {
-  window_data_t* p_data = glfwGetWindowUserPointer(window);
-  NVGcontext* p_ctx = p_data->context.p_ctx;
-
   // read the size of the font name
   uint32_t name_bytes;
   read_bytes_down(&name_bytes, sizeof(uint32_t), p_msg_length);
@@ -608,7 +605,10 @@ void dispatch_message( int msg_length, GLFWwindow* window )
       break;
 
     case CMD_PUT_FONT:
-      put_font( &msg_length, window );
+      put_font(
+        &msg_length,
+        ((window_data_t*)glfwGetWindowUserPointer(window))->context.p_ctx
+      );
       break;
 
     case CMD_PUT_IMG:
@@ -617,55 +617,6 @@ void dispatch_message( int msg_length, GLFWwindow* window )
         ((window_data_t*)glfwGetWindowUserPointer(window))->context.p_ctx
       );
       break;
-
-    // case CMD_QUERY_STATS:
-    //   receive_query_stats(window);
-    //   break;
-    // case CMD_RESHAPE:
-    //   receive_reshape(&msg_length, window);
-    //   break;
-    // case CMD_POSITION:
-    //   receive_position(&msg_length, window);
-    //   break;
-
-    // case CMD_ICONIFY:
-    //   glfwIconifyWindow(window);
-    //   break;
-
-    // case CMD_RESTORE:
-    //   glfwRestoreWindow(window);
-    //   break;
-    // case CMD_SHOW:
-    //   glfwShowWindow(window);
-    //   break;
-    // case CMD_HIDE:
-    //   glfwHideWindow(window);
-    //   break;
-
-    // // font handling
-    // case CMD_LOAD_FONT_FILE:
-    //   receive_load_font_file(&msg_length, window);
-    //   render = true;
-    //   break;
-    // case CMD_LOAD_FONT_BLOB:
-    //   receive_load_font_blob(&msg_length, window);
-    //   render = true;
-    //   break;
-
-    // // the next three are in tx.c
-    // case CMD_PUT_TX_BLOB:
-    //   receive_put_tx_blob(&msg_length, window);
-    //   render = true;
-    //   break;
-
-    // case CMD_PUT_TX_RAW:
-    //   receive_put_tx_pixels(&msg_length, window);
-    //   render = true;
-    //   break;
-
-    // case CMD_FREE_TX_ID:
-    //   receive_free_tx_id(&msg_length, window);
-    //   break;
 
     case CMD_CRASH:
       receive_crash();

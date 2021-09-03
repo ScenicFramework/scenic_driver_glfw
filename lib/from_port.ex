@@ -1,8 +1,15 @@
 defmodule Scenic.Driver.Glfw.FromPort do
   alias Scenic.ViewPort
-  alias Scenic.Utilities
 
   require Logger
+
+  import Scenic.Driver,
+    only: [
+      assign: 2,
+      assign: 3,
+      set_busy: 2,
+      send_input: 2
+    ]
 
   # incoming message ids
   @msg_close_id 0x00
@@ -37,9 +44,9 @@ defmodule Scenic.Driver.Glfw.FromPort do
         <<
           @msg_ready_id::unsigned-integer-size(32)-native
         >>,
-        state
+        driver
       ) do
-    {:noreply, %{state | busy: false}}
+    {:noreply, set_busy(driver, false)}
   end
 
   # --------------------------------------------------------
@@ -51,18 +58,17 @@ defmodule Scenic.Driver.Glfw.FromPort do
           frame_width::unsigned-integer-size(32)-native,
           frame_height::unsigned-integer-size(32)-native
         >>,
-        # state
-        %{viewport: viewport} = state
+        driver
       ) do
-    state =
-      state
-      |> Map.put(:window, {window_width, window_height})
-      |> Map.put(:frame, {frame_width, frame_height})
-      |> Map.put(:screen_factor, frame_width / window_width)
+    driver =
+      assign(driver,
+        window: {window_width, window_height},
+        frame: {frame_width, frame_height},
+        screen_factor: {frame_width / window_width}
+      )
+      |> send_input({:viewport, {:reshape, {window_width, window_height}}})
 
-    ViewPort.input(viewport, {:viewport, {:reshape, {window_width, window_height}}})
-
-    {:noreply, state}
+    {:noreply, driver}
   end
 
   # --------------------------------------------------------
@@ -71,7 +77,7 @@ defmodule Scenic.Driver.Glfw.FromPort do
           @msg_close_id::unsigned-integer-size(32)-native,
           reason::unsigned-integer-size(32)-native
         >>,
-        %{viewport: viewport, on_close: on_close} = state
+        %{assigns: %{on_close: on_close}, viewport: viewport} = driver
       ) do
     case on_close do
       :stop_driver -> ViewPort.stop_driver(viewport, self())
@@ -81,34 +87,34 @@ defmodule Scenic.Driver.Glfw.FromPort do
       {module, _fun, 1} -> module.fun(reason)
     end
 
-    {:noreply, Map.put(state, :closing, true)}
+    {:noreply, assign(driver, :closing, true)}
   end
 
   # --------------------------------------------------------
   def handle_port_message(
         <<@msg_puts_id::unsigned-integer-size(32)-native>> <> msg,
-        state
+        driver
       ) do
     IO.inspect(msg, label: "glfw_puts")
-    {:noreply, state}
+    {:noreply, driver}
   end
 
   # --------------------------------------------------------
   def handle_port_message(
         <<@msg_write_id::unsigned-integer-size(32)-native>> <> msg,
-        state
+        driver
       ) do
     IO.write(msg)
-    {:noreply, state}
+    {:noreply, driver}
   end
 
   # --------------------------------------------------------
   def handle_port_message(
         <<@msg_inspect_id::unsigned-integer-size(32)-native>> <> msg,
-        state
+        driver
       ) do
     IO.inspect(msg)
-    {:noreply, state}
+    {:noreply, driver}
   end
 
   # --------------------------------------------------------
@@ -120,14 +126,14 @@ defmodule Scenic.Driver.Glfw.FromPort do
           action::unsigned-integer-native-size(32),
           mods::unsigned-integer-native-size(32)
         >>,
-        %{viewport: viewport} = state
+        driver
       ) do
     key = key_to_name(key)
     action = action_to_atom(action)
 
-    ViewPort.input(viewport, {:key, {key, action, mods}})
+    send_input(driver, {:key, {key, action, mods}})
 
-    {:noreply, state}
+    {:noreply, driver}
   end
 
   # --------------------------------------------------------
@@ -137,13 +143,13 @@ defmodule Scenic.Driver.Glfw.FromPort do
           codepoint::unsigned-integer-native-size(32),
           mods::unsigned-integer-native-size(32)
         >>,
-        %{viewport: viewport} = state
+        driver
       ) do
     codepoint = codepoint_to_char(codepoint)
 
-    ViewPort.input(viewport, {:codepoint, {codepoint, mods}})
+    send_input(driver, {:codepoint, {codepoint, mods}})
 
-    {:noreply, state}
+    {:noreply, driver}
   end
 
   # --------------------------------------------------------
@@ -154,11 +160,10 @@ defmodule Scenic.Driver.Glfw.FromPort do
           y::float-native-size(32)
         >>,
         # state
-        %{viewport: viewport} = state
+        driver
       ) do
-    ViewPort.input(viewport, {:cursor_pos, {x, y}})
-
-    {:noreply, state}
+    send_input(driver, {:cursor_pos, {x, y}})
+    {:noreply, driver}
   end
 
   # --------------------------------------------------------
@@ -171,14 +176,12 @@ defmodule Scenic.Driver.Glfw.FromPort do
           x::float-native-size(32),
           y::float-native-size(32)
         >>,
-        %{viewport: viewport} = state
+        driver
       ) do
     # button = button_to_atom(button)
     action = action_to_atom(action)
-
-    ViewPort.input(viewport, {:cursor_button, {button, action, mods, {x, y}}})
-
-    {:noreply, state}
+    send_input(driver, {:cursor_button, {button, action, mods, {x, y}}})
+    {:noreply, driver}
   end
 
   # --------------------------------------------------------
@@ -190,14 +193,11 @@ defmodule Scenic.Driver.Glfw.FromPort do
           x_pos::float-native-size(32),
           y_pos::float-native-size(32)
         >>,
-        # state
-        %{viewport: viewport} = state
+        driver
       ) do
     input = {:cursor_scroll, {{x_offset, y_offset}, {x_pos, y_pos}}}
-
-    ViewPort.input(viewport, input)
-
-    {:noreply, state}
+    send_input(driver, input)
+    {:noreply, driver}
   end
 
   # --------------------------------------------------------
@@ -208,10 +208,10 @@ defmodule Scenic.Driver.Glfw.FromPort do
           x_pos::float-native-size(32),
           y_pos::float-native-size(32)
         >>,
-        %{viewport: viewport} = state
+        driver
       ) do
-    ViewPort.input(viewport, {:viewport, {:exit, {x_pos, y_pos}}})
-    {:noreply, state}
+    send_input(driver, {:viewport, {:exit, {x_pos, y_pos}}})
+    {:noreply, driver}
   end
 
   # --------------------------------------------------------
@@ -222,19 +222,19 @@ defmodule Scenic.Driver.Glfw.FromPort do
           x_pos::float-native-size(32),
           y_pos::float-native-size(32)
         >>,
-        %{viewport: viewport} = state
+        driver
       ) do
-    ViewPort.input(viewport, {:viewport, {:enter, {x_pos, y_pos}}})
-    {:noreply, state}
+    send_input(driver, {:viewport, {:enter, {x_pos, y_pos}}})
+    {:noreply, driver}
   end
 
   # --------------------------------------------------------
   def handle_port_message(
         <<id::unsigned-integer-size(32)-native, bin::binary>>,
-        state
+        driver
       ) do
     IO.puts("Unhandled port messages id: #{id}, msg: #{inspect(bin)}")
-    {:noreply, state}
+    {:noreply, driver}
   end
 
   # ============================================================================

@@ -1,13 +1,26 @@
 defmodule Scenic.Driver.Glfw do
+  @opts_schema [
+    name: [type: {:or, [:atom, :string]}],
+    title: [type: :string, default: "Driver Glfw"],
+    limit_ms: [type: :non_neg_integer, default: 29],
+    resizeable: [type: :boolean, default: false],
+    on_close: [
+      type: {:or, [:mfa, {:in, [:stop_driver, :stop_viewport, :stop_system, :halt_system]}]},
+      default: :stop_system
+    ]
+  ]
+
   @moduledoc """
-  Documentation for `Scenic.Driver.Glfw`.
+  Supported config options:\n#{NimbleOptions.docs(@opts_schema)}
   """
+
   use Scenic.Driver
   require Logger
 
   alias Scenic.Script
   alias Scenic.ViewPort
-  alias Scenic.Driver.Glfw
+  alias Scenic.Driver.Glfw.ToPort
+  alias Scenic.Driver.Glfw.FromPort
   alias Scenic.Assets.Static
   alias Scenic.Assets.Stream
 
@@ -16,35 +29,23 @@ defmodule Scenic.Driver.Glfw do
   @driver_ext if elem(:os.type(), 0) == :win32, do: '.exe', else: ''
   @port '/' ++ to_charlist(Mix.env()) ++ '/scenic_driver_glfw' ++ @driver_ext
 
-  # default values
-  @default_title "Driver Glfw"
-  @default_sync 30
-
-  @opts_schema [
-    name: [type: {:or, [:atom, :string]}],
-    title: [type: :string, default: @default_title],
-    sync_ms: [type: :integer, default: @default_sync],
-    resizeable: [type: :boolean, default: false],
-    on_close: [
-      type: {:or, [:mfa, {:in, [:stop_driver, :stop_viewport, :stop_system, :halt_system]}]},
-      default: :stop_system
-    ]
-  ]
-
   # same as scenic/script.ex
   @op_draw_script 0x0F
   @op_font 0x90
   @op_fill_image 0x63
   @op_stroke_image 0x74
 
+  @root_id ViewPort.root_id()
+
+  @impl Scenic.Driver
   def validate_opts(opts), do: NimbleOptions.validate(opts, @opts_schema)
 
   # --------------------------------------------------------
-  def init(viewport, opts) do
-    # device_id = "abc"
-    {width, height} = viewport.size
-
-    IO.puts("================> INIT GLFW DRIVER #{inspect(self())} <================")
+  @doc false
+  @impl Scenic.Driver
+  def init(driver, opts) do
+    {width, height} = driver.viewport.size
+    # IO.puts("================> INIT GLFW DRIVER #{inspect(driver)} <================")
 
     # prepare the agr string to start the port exe
     port_args = " #{width} #{height} #{opts[:resizeable]} \"#{opts[:title]}\""
@@ -54,229 +55,140 @@ defmodule Scenic.Driver.Glfw do
     executable = :code.priv_dir(:scenic_driver_glfw) ++ @port ++ to_charlist(port_args)
     port = Port.open({:spawn, executable}, [:binary, {:packet, 4}])
 
-    root_id = ViewPort.root_id()
+    driver =
+      assign(driver,
+        port: port,
+        screen_factor: 1.0,
+        size: {width, height},
+        closing: false,
+        on_close: opts[:on_close],
+        media: %{},
+        script_ids: %{@root_id => 0},
+        next_script_id: 1,
+        opts: opts,
+        busy: true
+      )
 
-    state = %{
-      port: port,
-      screen_factor: 1.0,
-      size: {width, height},
-      closing: false,
-      debounce: %{},
-      on_close: opts[:on_close],
-      media: %{},
-      script_ids: %{root_id => 0},
-      next_script_id: 1,
-      dirty_ids: [],
-      viewport: viewport,
-      opts: opts,
-      gated: false,
-      debounce_scripts: false,
-      debounce_redraw: false,
-      debounce_ms: opts[:sync_ms],
-      busy: true
-    }
-
-    {:ok, state}
+    {:ok, driver}
   end
 
   # --------------------------------------------------------
   @doc false
-  def handle_call(_msg, _from, %{} = state) do
-    {:reply, {:error, :not_implemented}, state}
+  @impl Scenic.Driver
+  def request_input(input, %{assigns: %{port: port}} = driver) do
+    ToPort.request_inputs(input, port)
+    {:ok, driver}
   end
 
   # --------------------------------------------------------
   @doc false
-
-  # handle input requests
-  # def handle_cast( {:request_input, inputs}, state ) do
-  def handle_cast({:request_input, inputs}, %{port: port} = state) do
-    Glfw.ToPort.request_inputs(inputs, port)
-    {:noreply, state}
-  end
-
-  # --------------------------------------------------------
-  # reset is received when the root scene is being changed
-  # Reset the tracked meda
-  def handle_cast(:reset, %{port: port} = state) do
+  @impl Scenic.Driver
+  def reset_scene(%{assigns: %{port: port}} = driver) do
     Stream.unsubscribe(:all)
-    Glfw.ToPort.reset_start(port)
-
-    root_id = ViewPort.root_id()
+    ToPort.reset_start(port)
 
     # state changes
-    state =
-      state
-      |> Map.put(:script_ids, %{root_id => 0})
-      |> Map.put(:next_script_id, 1)
-      |> Map.put(:dirty_ids, [root_id])
-      |> Map.put(:debounce_scripts, false)
-      |> Map.put(:busy, false)
-      |> Map.put(:media, %{})
+    driver =
+      assign(driver,
+        script_ids: %{@root_id => 0},
+        next_script_id: 1,
+        busy: false,
+        media: %{}
+      )
 
-    # reset tracked media
-    {:noreply, state}
-  end
-
-  # --------------------------------------------------------
-  # A gate signal is sent as scenes are staring up and complete is sent when it is done,
-  # including any child scenes.
-  def handle_cast(:gate_start, %{gated: false} = state) do
-    # state changes
-    state =
-      state
-      |> Map.put(:debounce_scripts, false)
-      |> Map.put(:busy, false)
-      |> Map.put(:gated, true)
-
-    {:noreply, state}
-  end
-
-  def handle_cast(:gate_start, state), do: {:noreply, state}
-
-  # the reset has completed
-  def handle_cast(:gate_complete, %{gated: true, port: port} = state) do
-    Glfw.ToPort.render(port)
-    {:noreply, %{state | gated: false}}
-  end
-
-  # --------------------------------------------------------
-  # put scripts
-
-  # if we are in a gate, just send the script right away, no need or desire to debounce them
-  def handle_cast({:put_scripts, ids}, %{dirty_ids: dirty, gated: true} = state) do
-    state = do_put_scripts([ids | dirty], state)
-    {:noreply, %{state | dirty_ids: []}}
-  end
-
-  # if debouncing, store the script ids instead of sending them right away
-  def handle_cast({:put_scripts, ids}, %{dirty_ids: dirty_ids, debounce_scripts: true} = state) do
-    {:noreply, %{state | dirty_ids: [ids | dirty_ids]}}
-  end
-
-  # if busy, store the script instead of sending it right away
-  def handle_cast({:put_scripts, ids}, %{dirty_ids: dirty_ids, busy: true} = state) do
-    {:noreply, %{state | dirty_ids: [ids | dirty_ids]}}
-  end
-
-  # not debouncing. Send the ids right away and start new debounce_scripts
-  def handle_cast(
-        {:put_scripts, ids},
-        %{dirty_ids: dirty_ids, port: port, debounce_ms: ms} = state
-      ) do
-    state = do_put_scripts([ids | dirty_ids], state)
-    Glfw.ToPort.render(port)
-
-    Process.send_after(self(), :debounce_scripts, ms)
-    {:noreply, %{state | debounce_scripts: true}}
+    {:ok, driver}
   end
 
   # --------------------------------------------------------
   @doc false
-
-  # Debounce time is up. No scripts arrived, so stop debouncing.
-  def handle_info(:debounce_scripts, %{debounce_scripts: false} = state) do
-    {:noreply, state}
+  @impl Scenic.Driver
+  def put_scripts(ids, %{assigns: %{port: port}} = driver) do
+    driver = do_put_scripts(driver, ids)
+    ToPort.render(port)
+    {:ok, driver}
   end
 
-  def handle_info(:debounce_scripts, %{dirty_ids: []} = state) do
-    {:noreply, %{state | debounce_scripts: false}}
-  end
-
-  # Debounce time is up. Scripts did arrive, so debounce_scripts again.
-  def handle_info(
-        :debounce_scripts,
-        %{dirty_ids: ids, port: port, debounce_ms: ms} = state
-      ) do
-    state = do_put_scripts(ids, state)
-    Glfw.ToPort.render(port)
-
-    Process.send_after(self(), :debounce_scripts, ms)
-    {:noreply, state}
+  # --------------------------------------------------------
+  @doc false
+  @impl Scenic.Driver
+  def del_scripts(ids, %{assigns: %{port: port}} = driver) do
+    Enum.each(ids, &ToPort.del_script(&1, port))
+    {:ok, driver}
   end
 
   # --------------------------------------------------------
   # deal with the app exiting normally
-  def handle_info({:EXIT, port_id, :normal}, %{port: port, closing: closing} = state)
+  @impl GenServer
+  def handle_info({:EXIT, port_id, :normal}, %{assigns: %{port: port, closing: closing}} = driver)
       when port_id == port do
     if closing do
       Logger.info("clean close")
       # we are closing cleanly, let it happen.
       GenServer.stop(self())
-      {:noreply, state}
+      {:noreply, driver}
     else
       Logger.error("dirty close")
       # we are not closing cleanly. Let the supervisor recover.
-      {:noreply, state}
+      {:noreply, driver}
     end
   end
-
-  # --------------------------------------------------------
-  # def handle_info({:debounce, type}, state) do
-  #   Glfw.FromPort.handle_debounce(type, state)
-  # end
 
   # --------------------------------------------------------
   # streaming asset updates
-  def handle_info({{Stream, :put}, Stream.Image, id}, %{port: port} = state) do
+  def handle_info({{Stream, :put}, Stream.Image, id}, %{assigns: %{port: port}} = driver) do
     with {:ok, {Stream.Image, {w, h, _mime}, bin}} <- Stream.fetch(id) do
       id32 = gen_id32_from_string(id)
-      Glfw.ToPort.put_texture(port, id32, :file, w, h, bin)
+      ToPort.put_texture(port, id32, :file, w, h, bin)
     end
 
-    {:noreply, state}
+    {:noreply, driver}
   end
 
-  def handle_info({{Stream, :put}, Stream.Bitmap, id}, %{port: port} = state) do
+  def handle_info({{Stream, :put}, Stream.Bitmap, id}, %{assigns: %{port: port}} = driver) do
     with {:ok, {Stream.Bitmap, {w, h, type}, bin}} <- Stream.fetch(id) do
       id32 = gen_id32_from_string(id)
-      Glfw.ToPort.put_texture(port, id32, type, w, h, bin)
+      ToPort.put_texture(port, id32, type, w, h, bin)
     end
 
-    {:noreply, state}
+    {:noreply, driver}
   end
 
-  def handle_info({{Stream, _verb}, _type, _id}, state), do: {:noreply, state}
+  def handle_info({{Stream, _verb}, _type, _id}, driver), do: {:noreply, driver}
 
   # --------------------------------------------------------
   # messages from the port
-  def handle_info({pid, {:data, data}}, %{port: port} = state) when pid == port do
-    Glfw.FromPort.handle_port_message(data, state)
+  def handle_info({pid, {:data, data}}, %{assigns: %{port: port}} = driver) when pid == port do
+    FromPort.handle_port_message(data, driver)
+  end
+
+  def handle_info(msg, driver) do
+    IO.inspect(msg, label: "GLFW UNHANDLED INFO")
+    {:noreply, driver}
   end
 
   # --------------------------------------------------------
-  defp do_put_scripts(ids, %{viewport: vp, port: port} = state) do
-    ids
-    |> List.flatten()
-    |> Enum.uniq()
-    |> Enum.sort()
-    |> case do
-      [] ->
+  defp do_put_scripts(%{assigns: %{port: port}, viewport: vp} = state, ids) do
+    Enum.reduce(ids, state, fn id, state ->
+      with {:ok, script} <- ViewPort.get_script(vp, id) do
+        state = ensure_media(script, state)
+        {s_id, state} = ensure_script_id(id, state)
+
+        {io, state} =
+          Script.serialize(script, state, fn
+            {:script, id}, state -> serialize_script(id, state)
+            {:font, id}, state -> {serialize_font(id), state}
+            {:fill_stream, id}, state -> {serialize_fill_stream(id), state}
+            {:stroke_stream, id}, state -> {serialize_stroke_stream(id), state}
+            other, state -> {other, state}
+          end)
+
+        ToPort.put_script(io, s_id, port)
+
         state
-
-      ids ->
-        Enum.reduce(ids, state, fn id, state ->
-          with {:ok, script} <- ViewPort.get_script(vp, id) do
-            state = ensure_media(script, state)
-            {s_id, state} = ensure_script_id(id, state)
-
-            {io, state} =
-              Script.serialize(script, state, fn
-                {:script, id}, state -> serialize_script(id, state)
-                {:font, id}, state -> {serialize_font(id), state}
-                {:fill_stream, id}, state -> {serialize_fill_stream(id), state}
-                {:stroke_stream, id}, state -> {serialize_stroke_stream(id), state}
-                other, state -> {other, state}
-              end)
-
-            Glfw.ToPort.put_script(io, s_id, port)
-
-            state
-          else
-            _ -> state
-          end
-        end)
-    end
+      else
+        _ -> state
+      end
+    end)
   end
 
   defp ensure_media(script, state) do
@@ -290,8 +202,8 @@ defmodule Scenic.Driver.Glfw do
 
   defp ensure_fonts(state, []), do: state
 
-  defp ensure_fonts(%{port: port} = state, ids) do
-    fonts = Map.get(state.media, :fonts, [])
+  defp ensure_fonts(%{assigns: %{port: port, media: media}} = driver, ids) do
+    fonts = Map.get(media, :fonts, [])
 
     fonts =
       Enum.reduce(ids, fonts, fn id, fonts ->
@@ -299,19 +211,19 @@ defmodule Scenic.Driver.Glfw do
              {:ok, {Static.Font, _}} <- Static.meta(id),
              {:ok, str_hash} <- Static.to_hash(id),
              {:ok, bin} <- Static.load(id) do
-          Glfw.ToPort.put_font(port, str_hash, bin)
+          ToPort.put_font(port, str_hash, bin)
           [id | fonts]
         else
           _ -> fonts
         end
       end)
 
-    put_in(state, [:media, :fonts], fonts)
+    assign(driver, :media, Map.put(media, :fonts, fonts))
   end
 
   defp ensure_images(state, []), do: state
 
-  defp ensure_images(%{port: port, media: media} = state, ids) do
+  defp ensure_images(%{assigns: %{port: port, media: media}} = state, ids) do
     images = Map.get(media, :images, [])
 
     images =
@@ -321,19 +233,19 @@ defmodule Scenic.Driver.Glfw do
              {:ok, str_hash} <- Static.to_hash(id),
              {:ok, bin_hash} <- Base.url_decode64(str_hash, padding: false),
              {:ok, bin} <- Static.load(id) do
-          Glfw.ToPort.put_texture(port, bin_hash, :file, w, h, bin)
+          ToPort.put_texture(port, bin_hash, :file, w, h, bin)
           [id | images]
         else
           _ -> images
         end
       end)
 
-    put_in(state, [:media, :images], images)
+    assign(state, :media, Map.put(media, :images, images))
   end
 
   defp ensure_streams(state, []), do: state
 
-  defp ensure_streams(%{port: port, media: media} = state, ids) do
+  defp ensure_streams(%{assigns: %{port: port, media: media}} = state, ids) do
     streams = Map.get(media, :streams, [])
 
     streams =
@@ -343,12 +255,12 @@ defmodule Scenic.Driver.Glfw do
           case Stream.fetch(id) do
             {:ok, {Stream.Image, {w, h, _format}, bin}} ->
               id32 = gen_id32_from_string(id)
-              Glfw.ToPort.put_texture(port, id32, :file, w, h, bin)
+              ToPort.put_texture(port, id32, :file, w, h, bin)
               [id | streams]
 
             {:ok, {Stream.Bitmap, {w, h, format}, bin}} ->
               id32 = gen_id32_from_string(id)
-              Glfw.ToPort.put_texture(port, id32, format, w, h, bin)
+              ToPort.put_texture(port, id32, format, w, h, bin)
               [id | streams]
 
             _err ->
@@ -359,7 +271,7 @@ defmodule Scenic.Driver.Glfw do
         end
       end)
 
-    put_in(state, [:media, :streams], streams)
+    assign(state, :media, Map.put(media, :streams, streams))
   end
 
   # if this is the first time we see this font, we need to send it to the renderer
@@ -384,22 +296,25 @@ defmodule Scenic.Driver.Glfw do
   defp ensure_script_id(
          script_id,
          %{
-           script_ids: script_ids,
-           next_script_id: next_script_id
-         } = state
+           assigns: %{
+             script_ids: script_ids,
+             next_script_id: next_script_id
+           }
+         } = driver
        )
        when is_bitstring(script_id) do
     case Map.fetch(script_ids, script_id) do
       {:ok, id} ->
-        {id, state}
+        {id, driver}
 
       :error ->
-        {
-          next_script_id,
-          state
-          |> Map.put(:script_ids, Map.put(script_ids, script_id, next_script_id))
-          |> Map.put(:next_script_id, next_script_id + 1)
-        }
+        driver =
+          assign(driver,
+            script_ids: Map.put(script_ids, script_id, next_script_id),
+            next_script_id: next_script_id + 1
+          )
+
+        {next_script_id, driver}
     end
   end
 
