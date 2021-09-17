@@ -36,8 +36,8 @@ endif
 all: $(PREFIX)/$(MIX_ENV)/scenic_driver_glfw
 
 SRCS = c_src/main.c c_src/nanovg/nanovg.c c_src/comms.c c_src/unix_comms.c \
-c_src/utils.c c_src/script.c c_src/image.c c_src/tommyds/src/tommyhashlin.c \
-c_src/tommyds/src/tommyhash.c 
+c_src/utils.c c_src/script.c c_src/image.c c_src/font.c \
+c_src/tommyds/src/tommyhashlin.c c_src/tommyds/src/tommyhash.c 
 
 
 $(PREFIX)/$(MIX_ENV)/scenic_driver_glfw: $(SRCS)

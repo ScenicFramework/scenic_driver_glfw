@@ -16,10 +16,12 @@ The caller will typically be erlang, so use the 2-byte length indicator
 
 // #include "render_script.h"
 // #include "tx.h"
-#include "script.h"
-#include "image.h"
 #include "types.h"
 #include "utils.h"
+#include "script.h"
+#include "image.h"
+#include "font.h"
+
 
 #define MSG_OUT_CLOSE 0x00
 #define MSG_OUT_STATS 0x01
@@ -45,7 +47,6 @@ The caller will typically be erlang, so use the 2-byte length indicator
 
 #define MSG_OUT_NEW_TX_ID 0x31
 #define MSG_OUT_NEW_FONT_ID 0x32
-
 
 
 #define CMD_PUT_SCRIPT  0x01
@@ -518,25 +519,32 @@ void receive_crash()
 void render(GLFWwindow* window)
 {
   window_data_t* p_data = glfwGetWindowUserPointer(window);
+  NVGcontext* p_ctx = p_data->context.p_ctx;
+
+  // prep the id to the root scene
+  sid_t id;
+  id.p_data = "_root_";
+  id.size = strlen(id.p_data);
 
   // render the scene
-  nvgBeginFrame(p_data->context.p_ctx, p_data->context.window_width,
+  nvgBeginFrame(p_ctx, p_data->context.window_width,
                 p_data->context.window_height,
                 p_data->context.frame_ratio.x);
 
   // render the root script
-  render_script( 0, p_data->context.p_ctx );
+  nvgSave( p_ctx );
+  render_script( id, p_ctx );
+  nvgRestore( p_ctx );
 
   // End frame and swap front and back buffers
-  nvgEndFrame(p_data->context.p_ctx);
+  nvgEndFrame( p_ctx );
   glfwSwapBuffers(window);
 
   // all done
   send_ready();
 }
 
-
-
+/*
 //---------------------------------------------------------
 void put_font(int* p_msg_length, NVGcontext* p_ctx)
 {
@@ -565,7 +573,7 @@ void put_font(int* p_msg_length, NVGcontext* p_ctx)
 
   free(p_name);
 }
-
+*/
 
 //---------------------------------------------------------
 void dispatch_message( int msg_length, GLFWwindow* window )
@@ -576,6 +584,7 @@ void dispatch_message( int msg_length, GLFWwindow* window )
   read_bytes_down(&msg_id, sizeof(uint32_t), &msg_length);
 
   // put_sn( "dispatch_message:", msg_id );
+  NVGcontext* p_ctx = ((window_data_t*)glfwGetWindowUserPointer(window))->context.p_ctx;
 
   switch (msg_id)
   {
@@ -593,7 +602,7 @@ void dispatch_message( int msg_length, GLFWwindow* window )
 
     case CMD_RESET:
       reset_scripts();
-      reset_images(((window_data_t*)glfwGetWindowUserPointer(window))->context.p_ctx);
+      reset_images(p_ctx);
       break;
 
     case CMD_RENDER:
@@ -605,17 +614,11 @@ void dispatch_message( int msg_length, GLFWwindow* window )
       break;
 
     case CMD_PUT_FONT:
-      put_font(
-        &msg_length,
-        ((window_data_t*)glfwGetWindowUserPointer(window))->context.p_ctx
-      );
+      put_font( &msg_length, p_ctx );
       break;
 
     case CMD_PUT_IMG:
-      put_image(
-        &msg_length,
-        ((window_data_t*)glfwGetWindowUserPointer(window))->context.p_ctx
-      );
+      put_image( &msg_length, p_ctx );
       break;
 
     case CMD_CRASH:
