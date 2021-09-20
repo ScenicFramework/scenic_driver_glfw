@@ -6,6 +6,7 @@ defmodule Scenic.Driver.Glfw.ToPort do
   @cmd_reset_scripts 0x03
 
   @cmd_render 0x06
+  @cmd_clear_color 0x08
 
   @cmd_request_input 0x0A
 
@@ -33,12 +34,26 @@ defmodule Scenic.Driver.Glfw.ToPort do
   @input_cursor_scroll 0x10
   @input_cursor_enter 0x20
 
-  def put_script(script, id, port) do
+  @doc false
+  def clear_color(color, port) do
+    {:color_rgba, {r, g, b, a}} = Scenic.Color.to_rgba(color)
+
+    msg = <<
+      @cmd_clear_color::unsigned-integer-size(32)-native,
+      r::size(8),
+      g::size(8),
+      b::size(8),
+      a::size(8)
+    >>
+
+    Port.command(port, msg)
+  end
+
+  def put_script(script, id, port) when is_bitstring(id) do
     msg = [
-      <<
-        @cmd_put_script::unsigned-integer-size(32)-native,
-        id::integer-size(32)-native
-      >>,
+      <<@cmd_put_script::unsigned-integer-size(32)-native>>,
+      <<byte_size(id)::integer-size(32)-native>>,
+      id,
       script
     ]
 
@@ -46,15 +61,16 @@ defmodule Scenic.Driver.Glfw.ToPort do
   end
 
   def del_script(id, port) do
-    msg = <<
-      @cmd_del_script::unsigned-integer-size(32)-native,
-      id::integer-size(32)-big
-    >>
+    msg = [
+      <<@cmd_del_script::unsigned-integer-size(32)-native>>,
+      <<byte_size(id)::integer-size(32)-big>>,
+      id
+    ]
 
     Port.command(port, msg)
   end
 
-  def reset_start(port) do
+  def reset(port) do
     Port.command(port, <<@cmd_reset_scripts::unsigned-integer-size(32)-native>>)
   end
 
@@ -144,13 +160,10 @@ defmodule Scenic.Driver.Glfw.ToPort do
   end
 
   def put_font(port, name, bin) when is_binary(name) and is_binary(bin) do
-    name_bytes = byte_size(name)
-
     msg = [
-      <<
-        @cmd_put_font::unsigned-integer-size(32)-native,
-        name_bytes::unsigned-integer-size(32)-native
-      >>,
+      <<@cmd_put_font::unsigned-integer-size(32)-native>>,
+      <<byte_size(name)::unsigned-integer-size(32)-native>>,
+      <<byte_size(bin)::unsigned-integer-size(32)-native>>,
       name,
       bin
     ]
@@ -183,16 +196,18 @@ defmodule Scenic.Driver.Glfw.ToPort do
     do_put_texture(port, id, 4, w, h, bin)
   end
 
-  def do_put_texture(port, <<_::binary-size(32)>> = id, format, w, h, bin)
-      when is_integer(w) and is_integer(h) and is_binary(bin) do
+  def do_put_texture(port, id, format, w, h, bin)
+      when is_integer(w) and is_integer(h) and is_binary(bin) and is_binary(id) do
     msg = [
       <<@cmd_put_img::unsigned-integer-size(32)-native>>,
-      id,
       <<
+        byte_size(id)::unsigned-integer-size(32)-native,
+        byte_size(bin)::unsigned-integer-size(32)-native,
         w::unsigned-integer-size(32)-native,
         h::unsigned-integer-size(32)-native,
         format::unsigned-integer-size(32)-native
       >>,
+      id,
       bin
     ]
 

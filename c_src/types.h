@@ -12,6 +12,8 @@
 #include <stdbool.h>
 #endif
 
+#include <stdint.h>
+
 #ifndef NANOVG_H
 #include "nanovg/nanovg.h"
 #endif
@@ -61,3 +63,15 @@ typedef struct
   // void*     p_tx_ids;
   context_t context;
 } window_data_t;
+
+
+//---------------------------------------------------------
+// combination of a size and location. Do NOT assume the
+// p_data can be free'd. It is usually in a larger block
+// that was the thing that was allocated.
+typedef struct _data_t {
+  void* p_data;
+  uint32_t size;
+} data_t;
+
+typedef data_t sid_t;

@@ -17,6 +17,7 @@
 #include "comms.h"
 #include "script.h"
 #include "image.h"
+#include "font.h"
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -59,13 +60,20 @@ void reshape_window(GLFWwindow* window, int w, int h)
   p_data->context.window_width  = w;
   p_data->context.window_height = h;
 
+  glfwGetFramebufferSize( window, &p_data->context.frame_width, &p_data->context.frame_height );
+
+
   p_data->context.frame_ratio.x = (float) p_data->context.frame_width /
                                   (float) p_data->context.window_width;
   p_data->context.frame_ratio.y = (float) p_data->context.frame_height /
                                   (float) p_data->context.window_height;
 
+  glViewport( 0, 0, p_data->context.frame_width, p_data->context.frame_height );
+  glClear( GL_COLOR_BUFFER_BIT );
+
   send_reshape(p_data->context.window_width, p_data->context.window_height, w, h);
 }
+
 
 //---------------------------------------------------------
 void key_callback(GLFWwindow* window, int key, int scancode, int action,
@@ -186,7 +194,7 @@ void setup_window(GLFWwindow* window, int width, int height)
 
   p_data->keep_going = true;
 
-  p_data->input_flags = INPUT_CURSOR_BUTTON_MASK;
+  p_data->input_flags = 0;
 
   // start position tracking with values that are obviously out of the window
   p_data->last_x      = -1.0f;
@@ -217,8 +225,9 @@ void setup_window(GLFWwindow* window, int width, int height)
   glfwGetWindowSize(window, &window_width, &window_height);
   reshape_window(window, window_width, window_height);
 
-  p_data->context.p_ctx =
-      nvgCreateGL2(NVG_ANTIALIAS | NVG_STENCIL_STROKES | NVG_DEBUG);
+  p_data->context.p_ctx = nvgCreateGL2(NVG_ANTIALIAS | NVG_DEBUG);
+  // nvgCreateGL2(NVG_ANTIALIAS | NVG_STENCIL_STROKES | NVG_DEBUG);
+  
   if (p_data->context.p_ctx == NULL)
   {
     send_puts("Could not init nanovg!!!");
@@ -276,6 +285,7 @@ int main(int argc, char** argv)
 
   // init the hashtables
   init_scripts();
+  init_fonts();
   init_images();
 
   // set the glfw window hints - done before window creation

@@ -16,10 +16,12 @@ The caller will typically be erlang, so use the 2-byte length indicator
 
 // #include "render_script.h"
 // #include "tx.h"
-#include "script.h"
-#include "image.h"
 #include "types.h"
 #include "utils.h"
+#include "script.h"
+#include "image.h"
+#include "font.h"
+
 
 #define MSG_OUT_CLOSE 0x00
 #define MSG_OUT_STATS 0x01
@@ -47,12 +49,12 @@ The caller will typically be erlang, so use the 2-byte length indicator
 #define MSG_OUT_NEW_FONT_ID 0x32
 
 
-
 #define CMD_PUT_SCRIPT  0x01
 #define CMD_DEL_SCRIPT  0x02
 #define CMD_RESET       0x03
 
 #define CMD_RENDER 0x06
+#define CMD_CLEAR_COLOR 0x08
 
 #define CMD_INPUT 0x0A
 
@@ -518,54 +520,41 @@ void receive_crash()
 void render(GLFWwindow* window)
 {
   window_data_t* p_data = glfwGetWindowUserPointer(window);
+  NVGcontext* p_ctx = p_data->context.p_ctx;
+
+  // prep the id to the root scene
+  sid_t id;
+  id.p_data = "_root_";
+  id.size = strlen(id.p_data);
 
   // render the scene
-  nvgBeginFrame(p_data->context.p_ctx, p_data->context.window_width,
+  nvgBeginFrame(p_ctx, p_data->context.window_width,
                 p_data->context.window_height,
                 p_data->context.frame_ratio.x);
+  glClear( GL_COLOR_BUFFER_BIT );
 
   // render the root script
-  render_script( 0, p_data->context.p_ctx );
+  nvgSave( p_ctx );
+  render_script( id, p_ctx );
+  nvgRestore( p_ctx );
 
   // End frame and swap front and back buffers
-  nvgEndFrame(p_data->context.p_ctx);
+  nvgEndFrame( p_ctx );
   glfwSwapBuffers(window);
 
   // all done
   send_ready();
 }
 
-
-
 //---------------------------------------------------------
-void put_font(int* p_msg_length, NVGcontext* p_ctx)
-{
-  // read the size of the font name
-  uint32_t name_bytes;
-  read_bytes_down(&name_bytes, sizeof(uint32_t), p_msg_length);
-
-  // allocate and copy in the font name
-  char* p_name = malloc( name_bytes + 1 );
-  if ( !p_name ) return;
-  read_bytes_down(p_name, name_bytes, p_msg_length);
-  // make sure the name is null terminated
-  p_name[name_bytes] = 0;
-
-  // allocate and read the font blob
-  unsigned int blob_bytes = *p_msg_length;
-  void* p_blob = malloc( blob_bytes );
-  read_bytes_down( p_blob, blob_bytes, p_msg_length );
-
-  // if the font is NOT loaded, then put it into nvg
-  if (nvgFindFont(p_ctx, p_name) < 0) {
-    nvgCreateFontMem(p_ctx, p_name, p_blob, blob_bytes, true);
-  } else {
-    free( p_blob );
-  }
-
-  free(p_name);
+void clear_color( int* p_msg_length ) {
+  byte r, g, b, a;
+  read_bytes_down( &r, 1, p_msg_length );
+  read_bytes_down( &g, 1, p_msg_length );
+  read_bytes_down( &b, 1, p_msg_length );
+  read_bytes_down( &a, 1, p_msg_length );
+  glClearColor(r / 255.0f, g / 255.0f, b / 255.0f, a / 255.0f);
 }
-
 
 //---------------------------------------------------------
 void dispatch_message( int msg_length, GLFWwindow* window )
@@ -576,6 +565,7 @@ void dispatch_message( int msg_length, GLFWwindow* window )
   read_bytes_down(&msg_id, sizeof(uint32_t), &msg_length);
 
   // put_sn( "dispatch_message:", msg_id );
+  NVGcontext* p_ctx = ((window_data_t*)glfwGetWindowUserPointer(window))->context.p_ctx;
 
   switch (msg_id)
   {
@@ -593,11 +583,15 @@ void dispatch_message( int msg_length, GLFWwindow* window )
 
     case CMD_RESET:
       reset_scripts();
-      reset_images(((window_data_t*)glfwGetWindowUserPointer(window))->context.p_ctx);
+      reset_images(p_ctx);
       break;
 
     case CMD_RENDER:
       render( window );
+      break;
+
+    case CMD_CLEAR_COLOR:
+      clear_color( &msg_length );
       break;
 
     case CMD_INPUT:
@@ -605,17 +599,11 @@ void dispatch_message( int msg_length, GLFWwindow* window )
       break;
 
     case CMD_PUT_FONT:
-      put_font(
-        &msg_length,
-        ((window_data_t*)glfwGetWindowUserPointer(window))->context.p_ctx
-      );
+      put_font( &msg_length, p_ctx );
       break;
 
     case CMD_PUT_IMG:
-      put_image(
-        &msg_length,
-        ((window_data_t*)glfwGetWindowUserPointer(window))->context.p_ctx
-      );
+      put_image( &msg_length, p_ctx );
       break;
 
     case CMD_CRASH:

@@ -10,12 +10,21 @@
 #include "comms.h"
 #include "script.h"
 #include "image.h"
+#include "font.h"
 
 
-#define HASH_ID(id)  tommy_inthash_u32(id)
+//---------------------------------------------------------
+typedef struct _script_t {
+  sid_t id;
+  data_t script;
+  tommy_hashlin_node  node;
+} script_t;
+
+
+// #define HASH_ID(id)  tommy_inthash_u32(id)
+#define HASH_ID(id)  tommy_hash_u32( 0, id.p_data, id.size )
 
 tommy_hashlin   scripts = {0};
-
 
 
 //---------------------------------------------------------
@@ -29,13 +38,19 @@ void init_scripts( void ) {
 
 // isolate all knowledge of the hash table implementation to these functions
 
+
+
+
 //---------------------------------------------------------
-static int _comparator(const void* arg, const void* obj) {
-  return *(const uint32_t*)arg != ((const script_t*)obj)->id;
+static int _comparator(const void* p_arg, const void* p_obj) {
+  const sid_t* p_id = p_arg;
+  const script_t* p_script = p_obj;
+  return (p_id->size != p_script->id.size)
+    || memcmp(p_id->p_data, p_script->id.p_data, p_id->size);
 }
 
 //---------------------------------------------------------
-script_t* get_script( uint32_t id ) {
+script_t* get_script( sid_t id ) {
   return tommy_hashlin_search(
     &scripts,
     _comparator,
@@ -45,7 +60,7 @@ script_t* get_script( uint32_t id ) {
 }
 
 //---------------------------------------------------------
-void do_delete_script( int id ) {
+void do_delete_script( sid_t id ) {
   script_t* p_script = get_script( id );
   if ( p_script ) {
     tommy_hashlin_remove_existing( &scripts, &p_script->node );
@@ -54,44 +69,64 @@ void do_delete_script( int id ) {
 }
 
 
-
 //---------------------------------------------------------
-script_t* put_script( int* p_msg_length ) {
+void put_script( int* p_msg_length ) {
 
-  // read the id of the script, which is in the first four bytes 
-  uint32_t id;
-  read_bytes_down( &id, sizeof(uint32_t), p_msg_length );
+  // read in the length of the id, which is in the first four bytes
+  uint32_t id_length;
+  read_bytes_down( &id_length, sizeof(uint32_t), p_msg_length );
 
-  // if there already is a script with that id, delete it
-  do_delete_script( id );
-
-  // alloc the script struct and space for the script itself
-  int struct_size = ALIGN_UP(sizeof(script_t), 64);
-  int alloc_size = struct_size + *p_msg_length;
+  // initialize a record to hold the script
+  int struct_size = ALIGN_UP(sizeof(script_t), 8);
+  int id_size = ALIGN_UP(id_length, 8);
+  int alloc_size = struct_size + id_size + *p_msg_length;
   script_t *p_script = malloc( alloc_size );
-  if ( !p_script ) return NULL;
+  if ( !p_script ) {
+    send_puts( "Unable to allocate script" );
+    return;
+  };
 
-  // initialize the script
-  p_script->id = id;
-  p_script->size = *p_msg_length;
-  p_script->p_data = ((void*)p_script) + struct_size;
+  // initialize the id
+  p_script->id.size = id_length;
+  p_script->id.p_data = ((void*)p_script) + struct_size;
+  read_bytes_down( p_script->id.p_data, id_length, p_msg_length );
 
-  // read in the script itself
-  read_bytes_down( p_script->p_data, *p_msg_length, p_msg_length );
+  // initialize the data
+  p_script->script.size = *p_msg_length;
+  p_script->script.p_data = ((void*)p_script) + struct_size + id_size;
+  read_bytes_down( p_script->script.p_data, *p_msg_length, p_msg_length );
+
+  // if there is already is a script with the same id, delete it
+  do_delete_script( p_script->id );
 
   // insert the script into the tommy hash
-  tommy_hashlin_insert( &scripts, &p_script->node, p_script, HASH_ID(id) );
+  tommy_hashlin_insert( &scripts, &p_script->node, p_script, HASH_ID(p_script->id) );
 
   // return the completed struct
-  return p_script;
+  return;
 }
 
 //---------------------------------------------------------
 void delete_script( int* p_msg_length ) {
-  // read the id of the script, which is in the first four bytes 
-  uint32_t id;
-  read_bytes_down( &id, sizeof(uint32_t), p_msg_length );
+  sid_t id;
+
+  // read in the length of the id, which is in the first four bytes
+  read_bytes_down( &id.size, sizeof(uint32_t), p_msg_length );
+
+  // create a temporary buffer and read the id into it
+  id.p_data = malloc(id.size);
+  if ( !id.p_data ) {
+    send_puts( "Unable to allocate buffer for the id" );
+    return;
+  };
+
+  // read in the body of the id
+  read_bytes_down( id.p_data, id.size, p_msg_length );
+
+  // delete and free
   do_delete_script( id );
+
+  free( id.p_data );
 }
 
 //---------------------------------------------------------
@@ -133,13 +168,37 @@ static inline GLfloat get_float( void* p, uint32_t offset ) {
 }
 
 
+int padded_advance( int size ) {
+  switch( size % 4 ) {
+    case 0: return size;
+    case 1: return size + 3;
+    case 2: return size + 2;
+    case 3: return size + 1;
+    default: size;
+  };
+}
+
+
+
+/*
 //---------------------------------------------------------
-void set_font( char* p_font, NVGcontext* p_ctx ) {
+void set_font( sid_t id, NVGcontext* p_ctx ) {
+  // unfortunately, nvgFindFont expects a zero terminated C string
+  char* p_font = calloc( 1, id.size + 1 );
+  if ( !p_font ) {
+    send_puts( "Unable to alloc temp font id buffer" );
+    return;
+  }
+  memcpy( p_font, id.p_data, id.size );
+
   int font_id = nvgFindFont(p_ctx, p_font);
   if (font_id >= 0) {
     nvgFontFaceId(p_ctx, font_id);
   }
+
+  free( p_font );
 }
+*/
 
 void render_text( char* p_text, unsigned int size, NVGcontext* p_ctx )
 {
@@ -167,15 +226,16 @@ void render_text( char* p_text, unsigned int size, NVGcontext* p_ctx )
 }
 
 
-int render_sprites( NVGcontext* p_ctx, void* p, int i, uint16_t  count ) {
+int render_sprites( NVGcontext* p_ctx, void* p, int i, uint16_t  param ) {
+  // get the count of rects
+  uint32_t count = get_uint32(p, i);
+  i += sizeof(uint32_t);
 
-  // // get the count of draw commands
-  // GLuint img_id = get_uint32( p, i );
-  // i += 4;
-
-  // get a pointer to the id
-  hash_id_t* p_id = p + i;
-  i += 32;
+  // get the id
+  sid_t id;
+  id.size = param;
+  id.p_data = p + i;
+  i += padded_advance( param );
 
   // loop the draw commands and draw each
   for ( int n = 0; n < count; n++ ) {
@@ -188,7 +248,7 @@ int render_sprites( NVGcontext* p_ctx, void* p, int i, uint16_t  count ) {
     GLfloat dw = get_float( p, i + 24 );
     GLfloat dh = get_float( p, i + 28 );
 
-    draw_image( p_ctx, p_id, sx, sy, sw, sh, dx, dy, dw, dh );
+    draw_image( p_ctx, id, sx, sy, sw, sh, dx, dy, dw, dh );
 
     i += 32;
   }
@@ -197,91 +257,8 @@ int render_sprites( NVGcontext* p_ctx, void* p, int i, uint16_t  count ) {
 }
 
 
-// void* arc(NVGcontext* p_ctx, void* p_script)
-// {
-//   // bring sector data onto the stack
-//   arc_sector_t sector = *(arc_sector_t*) p_script;
-
-//   // clamp the angle to a circle
-//   float angle = sector.finish - sector.start;
-//   angle       = angle > TAU ? TAU : angle;
-//   angle       = angle < -TAU ? -TAU : angle;
-
-//   // calculate the number of segments
-//   int   segment_count = log2(sector.radius) * fabsf(angle) * 2;
-//   float increment     = angle / segment_count;
-//   float a             = sector.start;
-
-//   // don't draw anything if the angle is so small that the segment_count is zero
-//   if (segment_count > 0)
-//   {
-//     // Arc starts on the perimeter. Sector starts in the center.
-//     for (int i = 0; i <= segment_count; ++i)
-//     {
-//       float px, py;
-//       px = sector.radius * cos(a);
-//       py = sector.radius * sin(a);
-//       if (i == 0)
-//       {
-//         nvgMoveTo(p_ctx, px, py);
-//       }
-//       else
-//       {
-//         nvgLineTo(p_ctx, px, py);
-//       }
-//       a += increment;
-//     }
-//     // arc doesn't close
-//   }
-
-//   return (void *)((char *)p_script + sizeof(arc_sector_t));
-// }
-
-// void* sector(NVGcontext* p_ctx, void* p_script)
-// {
-//   // bring sector data onto the stack
-//   arc_sector_t sector = *(arc_sector_t*) p_script;
-
-//   // clamp the angle to a circle
-//   float angle = sector.finish - sector.start;
-//   angle       = angle > TAU ? TAU : angle;
-//   angle       = angle < -TAU ? -TAU : angle;
-
-//   // calculate the number of segments
-//   int   segment_count = log2(sector.radius) * fabsf(angle) * 2;
-//   float increment     = angle / segment_count;
-//   float a             = sector.start;
-
-//   // don't draw anything if the angle is so small that the segment_count is zero
-//   if (segment_count > 0)
-//   {
-//     // Arc starts on the perimeter. Sector starts in the center.
-//     nvgMoveTo(p_ctx, 0, 0);
-
-//     for (int i = 0; i <= segment_count; ++i)
-//     {
-//       float px, py;
-//       px = sector.radius * cos(a);
-//       py = sector.radius * sin(a);
-//       nvgLineTo(p_ctx, px, py);
-//       a += increment;
-//     }
-//     nvgClosePath(p_ctx);
-//   }
-
-//   return (void *)((char *)p_script + sizeof(arc_sector_t));
-// }
-
-
-
-
-
-
-
-
-
 //---------------------------------------------------------
-void render_script( uint32_t id, NVGcontext* p_ctx ) {
+void render_script( sid_t id, NVGcontext* p_ctx ) {
   // get the script
   script_t* p_script = get_script( id );
   if ( !p_script ) {
@@ -293,10 +270,10 @@ void render_script( uint32_t id, NVGcontext* p_ctx ) {
   
 
   // setup
-  void* p = p_script->p_data;
+  void* p = p_script->script.p_data;
   int i = 0;
 
-  while ( i < p_script->size ) {
+  while ( i < p_script->script.size ) {
     int op = get_uint16(p, i);
     int param = get_uint16(p, i + 2);
     i += 4;
@@ -385,15 +362,7 @@ void render_script( uint32_t id, NVGcontext* p_ctx ) {
         break;
       case 0x0A:        // draw_text - byte count is in param
         render_text( p + i, param, p_ctx );
-        i += param;
-        // skip any padding
-        switch( param % 4 ) {
-          case 0: break;
-          case 1: i += 3; break;
-          case 2: i += 2; break;
-          case 3: i += 1; break;
-          default: break;
-        }
+        i += padded_advance( param );
         break;
 
 
@@ -415,9 +384,18 @@ void render_script( uint32_t id, NVGcontext* p_ctx ) {
 
 
       case 0x0F:        // render_script
-        // fun with recursion
-        render_script( param, p_ctx );
+        // we can reuse the passed in id struct
+        id.size = param;
+        id.p_data = p + i;
+        render_script( id, p_ctx );
+        i += padded_advance( param );
         break;
+
+
+
+
+
+
 
       case 0x20:        // begin_path
         nvgBeginPath(p_ctx);
@@ -541,13 +519,20 @@ void render_script( uint32_t id, NVGcontext* p_ctx ) {
         i += 24;
         break;
       case 0x63:        // fill_image
-        set_fill_image(
-          p_ctx,
-          p + i
-          // get_uint32(p, i + 0)     // driver id
-        );
-        i += 32;
-      break; 
+        // we can reuse the passed in id struct
+        id.size = param;
+        id.p_data = p + i;
+        set_fill_image( p_ctx, id );
+        i += padded_advance( param );
+      break;
+      case 0x64:        // fill_stream
+        // we can reuse the passed in id struct
+        id.size = param;
+        id.p_data = p + i;
+        set_fill_image( p_ctx, id );
+        i += padded_advance( param );
+      break;
+
 
       case 0x70:        // stroke width
         nvgStrokeWidth(p_ctx, param / 4.0);
@@ -581,13 +566,20 @@ void render_script( uint32_t id, NVGcontext* p_ctx ) {
         i += 24;
         break;
       case 0x74:        // stroke_image
-        set_stroke_image(
-          p_ctx,
-          p + i
-          // get_uint32(p, i + 0)     // driver id
-        );
-        i += 32;
+        // we can reuse the passed in id struct
+        id.size = param;
+        id.p_data = p + i;
+        set_stroke_image( p_ctx, id );
+        i += padded_advance( param );
       break;
+      case 0x75:        // stroke_stream
+        // we can reuse the passed in id struct
+        id.size = param;
+        id.p_data = p + i;
+        set_stroke_image( p_ctx, id );
+        i += padded_advance( param );
+      break;
+
 
 
 
@@ -611,16 +603,11 @@ void render_script( uint32_t id, NVGcontext* p_ctx ) {
 
 
       case 0x90:        // font
-        set_font( p + i, p_ctx );
-        i += param;
-        // skip any padding
-        switch( param % 4 ) {
-          case 0: break;
-          case 1: i += 3; break;
-          case 2: i += 2; break;
-          case 3: i += 1; break;
-          default: break;
-        }
+        // we can reuse the passed in id struct
+        id.size = param;
+        id.p_data = p + i;
+        set_font( id, p_ctx );
+        i += padded_advance( param );
         break;
       case 0x91:        // font_size
           nvgFontSize( p_ctx, param / 4.0 );

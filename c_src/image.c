@@ -18,15 +18,26 @@
 #include "image.h"
 #include "comms.h"
 
-// #define HASH_ID(id)  tommy_inthash_u32(id)
-#define HASH_ID(p_id)  tommy_hash_u32( 0, (void*)p_id, 32 )
-// tommy_uint32_t tommy_hash_u32(tommy_uint32_t init_val, const void* void_key, tommy_size_t key_len);
+#define HASH_ID(id) tommy_hash_u32( 0, id.p_data, id.size )
 
 
 #define REPEAT_XY   (NVG_IMAGE_REPEATX | NVG_IMAGE_REPEATY)
 
 
 tommy_hashlin   images = {0};
+
+
+
+//---------------------------------------------------------
+typedef struct _image_t {
+  sid_t id;
+  uint32_t nvg_id;
+  uint32_t width;
+  uint32_t height;
+  uint32_t format;
+  void* p_pixels;
+  tommy_hashlin_node  node;
+} image_t;
 
 
 //---------------------------------------------------------
@@ -41,21 +52,22 @@ void init_images( void ) {
 // isolate all knowledge of the hash table implementation to these functions
 
 //---------------------------------------------------------
-static int _comparator(const void* arg, const void* obj) {
-  // works because id is the first field in obj
-  return memcmp( arg, obj, 32 );
-  // return *(const uint32_t*)arg != *(const uint32_t*)obj;
-  // return *(const uint32_t*)arg != ((const image_t*)obj)->driver_id;
+static int _comparator(const void* p_arg, const void* p_obj) {
+  const sid_t* p_id = p_arg;
+  const image_t* p_img = p_obj;
+  return (p_id->size != p_img->id.size)
+    || memcmp(p_id->p_data, p_img->id.p_data, p_id->size);
 }
+
 
 //---------------------------------------------------------
 // image_t* get_image( uint32_t driver_id ) {
-image_t* get_image( const hash_id_t* p_id ) {
+image_t* get_image( sid_t id ) {
   return tommy_hashlin_search(
     &images,
     _comparator,
-    p_id,
-    HASH_ID( p_id ) 
+    &id,
+    HASH_ID( id ) 
   );
 }
 
@@ -74,8 +86,8 @@ void image_free( NVGcontext* p_ctx, image_t* p_image ) {
 }
 
 //---------------------------------------------------------
-void delete_image( hash_id_t* p_id, NVGcontext* p_ctx ) {
-  image_t* p_image = get_image( p_id );
+void delete_image( sid_t id, NVGcontext* p_ctx ) {
+  image_t* p_image = get_image( id );
   if ( p_image ) {
     image_free( p_ctx, p_image );
   }
@@ -164,69 +176,100 @@ void* read_pixels( uint32_t width, uint32_t height, uint32_t format_in, int* p_m
 }
 
 //---------------------------------------------------------
-image_t* put_image( int* p_msg_length, NVGcontext* p_ctx ) {
-  // read the driver_id of the script, which is in the first four bytes 
-  // is also in native ordering
-
-  hash_id_t id;
+void put_image( int* p_msg_length, NVGcontext* p_ctx ) {
+  // read in the fixed size data
+  uint32_t id_length;
+  uint32_t blob_size;
   uint32_t width;
   uint32_t height;
   uint32_t format;
-  read_bytes_down( &id, 32, p_msg_length );
+  read_bytes_down( &id_length, sizeof(uint32_t), p_msg_length );
+  read_bytes_down( &blob_size, sizeof(uint32_t), p_msg_length );
   read_bytes_down( &width, sizeof(uint32_t), p_msg_length );
   read_bytes_down( &height, sizeof(uint32_t), p_msg_length );
   read_bytes_down( &format, sizeof(uint32_t), p_msg_length );
 
+  // read the id into a temp buffer
+  void* p_temp_id = calloc( 1, id_length + 1 );
+  if ( !p_temp_id ) {
+    send_puts( "Unable to allocate image p_temp_id" );
+    return;
+  };
+  read_bytes_down( p_temp_id, id_length, p_msg_length );
+  sid_t id;
+  id.size = id_length;
+  id.p_data = p_temp_id;
+
+
   // get the existing image record, if there is one
-  image_t* p_image = get_image( &id );
+  image_t* p_image = get_image( id );
+
 
   // if the height or width have changed, we need to delete the existing record to reset it
-  if ( p_image && (width != p_image->width || height != p_image->height )) {
+  if ( p_image && (width != p_image->width || height != p_image->height || format != p_image->format )) {
     image_free( p_ctx, p_image );
     p_image = NULL;
   }
 
   // if there is no existing record, create a new one
   if ( !p_image ) {
-    p_image = malloc( sizeof(image_t) );
-    if (!p_image) return NULL;
-    memcpy( &p_image->id, &id, 32 );
-    // p_image->driver_id = driver_id;
+    // initialize a record to hold the image
+    int struct_size = ALIGN_UP(sizeof(image_t), 8);
+    // the +1 is so the id is null terminated
+    int id_size = id_length + 1;
+    int alloc_size = struct_size + id_size;
+
+    p_image = calloc( 1, alloc_size );
+    if ( !p_image ) {
+      send_puts( "Unable to allocate image struct" );
+      free( p_temp_id );
+      return;
+    };
     p_image->width = width;
     p_image->height = height;
+    p_image->format = format;
+
+    // initialize the id
+    p_image->id.size = id_length;
+    p_image->id.p_data = ((void*)p_image) + struct_size;
+    memcpy( p_image->id.p_data, p_temp_id, id_length );
+
 
     // get the image data in pixel format
-    void* p_pixels = read_pixels( width, height, format, p_msg_length );
-    if ( !p_pixels ) {
-      free(p_image);
-      return NULL;
+    p_image->p_pixels = read_pixels( width, height, format, p_msg_length );
+    if ( !p_image->p_pixels ) {
+      free( p_image );
+      free( p_temp_id );
+      send_puts( "Unable to alloc img pixels" );
+      return;
     }
 
     // create an nvg texture from the pixel data
-    p_image->nvg_id = nvgCreateImageRGBA( p_ctx, width, height, REPEAT_XY, p_pixels );
-
-    // done with the pixel data. Safe to delete it now
-    p_image->p_pixels = p_pixels;
-    // free( p_pixels );
+    p_image->nvg_id = nvgCreateImageRGBA( p_ctx, width, height, REPEAT_XY, p_image->p_pixels );
 
     // save the image record into the tommyhash
-    tommy_hashlin_insert( &images, &p_image->node, p_image, HASH_ID(&id) );
+    tommy_hashlin_insert( &images, &p_image->node, p_image, HASH_ID(p_image->id) );
 
   } else {
     // the image already exists and is the right size.
     // can save some bit of work by replacing the pixels of the existing image
     void* p_pixels = read_pixels( width, height, format, p_msg_length );
-    if (!p_pixels) return NULL;
+    if ( !p_pixels ) {
+      free( p_temp_id );
+      send_puts( "Unable to alloc img pixels" );
+      return;
+    }
 
     nvgUpdateImage( p_ctx, p_image->nvg_id, p_pixels );
 
-    // done with the pixel data. Safe to delete it now
+    // done with the old pixel data.
     free( p_image->p_pixels );
+
+    // save the new pixel data
     p_image->p_pixels = p_pixels;
-    // free( p_pixels );
   }
 
-  return p_image;
+  free( p_temp_id );
 }
 
 
@@ -234,13 +277,10 @@ image_t* put_image( int* p_msg_length, NVGcontext* p_ctx ) {
 // called when rendering scripts
 
 //---------------------------------------------------------
-void set_fill_image( NVGcontext* p_ctx, const hash_id_t* p_id ) {
+void set_fill_image( NVGcontext* p_ctx, sid_t id ) {
   // get the mapped nvg_id for this image_id
-  image_t* p_image = get_image( p_id );
-  if ( !p_image ) {
-    // send_image_miss( image_id );
-    return;
-  }
+  image_t* p_image = get_image( id );
+  if ( !p_image ) return;
 
   // get the dimensions of the image
   int w,h;
@@ -254,18 +294,14 @@ void set_fill_image( NVGcontext* p_ctx, const hash_id_t* p_id ) {
 }
 
 //---------------------------------------------------------
-void set_stroke_image( NVGcontext* p_ctx, const hash_id_t* p_id ) {
+void set_stroke_image( NVGcontext* p_ctx, sid_t id ) {
   // get the mapped nvg_id for this image_id
-  image_t* p_image = get_image( p_id );
-  if ( !p_image ) {
-    // send_image_miss( image_id );
-    return;
-  }
+  image_t* p_image = get_image( id );
+  if ( !p_image ) return;
 
   // get the dimensions of the image
   int w,h;
   nvgImageSize(p_ctx, p_image->nvg_id, &w, &h);
-
 
   // the image is loaded and ready for use
   nvgStrokePaint(p_ctx,
@@ -273,22 +309,17 @@ void set_stroke_image( NVGcontext* p_ctx, const hash_id_t* p_id ) {
   );
 }
 
-
-
 //---------------------------------------------------------
 // see: https://github.com/memononen/nanovg/issues/348
-void draw_image( NVGcontext* p_ctx, const hash_id_t* p_id,
+void draw_image( NVGcontext* p_ctx, sid_t id,
 GLfloat sx, GLfloat sy, GLfloat sw, GLfloat sh,
 GLfloat dx, GLfloat dy, GLfloat dw, GLfloat dh) {
   GLfloat ax, ay;
   NVGpaint img_pattern;
   
   // get the mapped nvg_id for this driver_id
-  image_t* p_image = get_image( p_id );
-  if ( !p_image ) {
-    // send_image_miss( p_id );
-    return;
-  }
+  image_t* p_image = get_image( id );
+  if ( !p_image ) return;
 
   // get the dimensions of the image
   int iw,ih;
@@ -315,13 +346,3 @@ GLfloat dx, GLfloat dy, GLfloat dw, GLfloat dh) {
   // the data for the paint pattern is a struct on the stack.
   // no need to clean it up
 }
-
-
-
-
-
-
-
-
-
-

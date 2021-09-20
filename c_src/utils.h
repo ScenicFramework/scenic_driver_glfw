@@ -14,6 +14,7 @@ Functions to load fonts and render text
 #define ALIGN_UP(n, s) (((n) + (s) - 1) & ~((s) - 1))
 #define ALIGN_DOWN(n, s) ((n) & ~((s) - 1))
 
+
 // void check_gl_error(char* msg);
 void check_gl_error();
 
