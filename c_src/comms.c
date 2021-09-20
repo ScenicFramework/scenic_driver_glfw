@@ -54,6 +54,7 @@ The caller will typically be erlang, so use the 2-byte length indicator
 #define CMD_RESET       0x03
 
 #define CMD_RENDER 0x06
+#define CMD_CLEAR_COLOR 0x08
 
 #define CMD_INPUT 0x0A
 
@@ -530,6 +531,7 @@ void render(GLFWwindow* window)
   nvgBeginFrame(p_ctx, p_data->context.window_width,
                 p_data->context.window_height,
                 p_data->context.frame_ratio.x);
+  glClear( GL_COLOR_BUFFER_BIT );
 
   // render the root script
   nvgSave( p_ctx );
@@ -544,36 +546,15 @@ void render(GLFWwindow* window)
   send_ready();
 }
 
-/*
 //---------------------------------------------------------
-void put_font(int* p_msg_length, NVGcontext* p_ctx)
-{
-  // read the size of the font name
-  uint32_t name_bytes;
-  read_bytes_down(&name_bytes, sizeof(uint32_t), p_msg_length);
-
-  // allocate and copy in the font name
-  char* p_name = malloc( name_bytes + 1 );
-  if ( !p_name ) return;
-  read_bytes_down(p_name, name_bytes, p_msg_length);
-  // make sure the name is null terminated
-  p_name[name_bytes] = 0;
-
-  // allocate and read the font blob
-  unsigned int blob_bytes = *p_msg_length;
-  void* p_blob = malloc( blob_bytes );
-  read_bytes_down( p_blob, blob_bytes, p_msg_length );
-
-  // if the font is NOT loaded, then put it into nvg
-  if (nvgFindFont(p_ctx, p_name) < 0) {
-    nvgCreateFontMem(p_ctx, p_name, p_blob, blob_bytes, true);
-  } else {
-    free( p_blob );
-  }
-
-  free(p_name);
+void clear_color( int* p_msg_length ) {
+  byte r, g, b, a;
+  read_bytes_down( &r, 1, p_msg_length );
+  read_bytes_down( &g, 1, p_msg_length );
+  read_bytes_down( &b, 1, p_msg_length );
+  read_bytes_down( &a, 1, p_msg_length );
+  glClearColor(r / 255.0f, g / 255.0f, b / 255.0f, a / 255.0f);
 }
-*/
 
 //---------------------------------------------------------
 void dispatch_message( int msg_length, GLFWwindow* window )
@@ -607,6 +588,10 @@ void dispatch_message( int msg_length, GLFWwindow* window )
 
     case CMD_RENDER:
       render( window );
+      break;
+
+    case CMD_CLEAR_COLOR:
+      clear_color( &msg_length );
       break;
 
     case CMD_INPUT:

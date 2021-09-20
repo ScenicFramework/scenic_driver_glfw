@@ -37,7 +37,6 @@ defmodule Scenic.Driver.Glfw do
 
   @root_id ViewPort.root_id()
 
-
   @impl Scenic.Driver
   def validate_opts(opts), do: NimbleOptions.validate(opts, @opts_schema)
 
@@ -106,6 +105,14 @@ defmodule Scenic.Driver.Glfw do
   @impl Scenic.Driver
   def del_scripts(ids, %{assigns: %{port: port}} = driver) do
     Enum.each(ids, &ToPort.del_script(&1, port))
+    {:ok, driver}
+  end
+
+  # --------------------------------------------------------
+  @doc false
+  @impl Scenic.Driver
+  def clear_color(color, %{assigns: %{port: port}} = driver) do
+    ToPort.clear_color(color, port)
     {:ok, driver}
   end
 

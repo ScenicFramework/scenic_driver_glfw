@@ -386,23 +386,23 @@ defmodule Scenic.Driver.Glfw.FromPort do
   defp key_to_atom(code), do: Map.get(@glfw_key_atoms, code, :unknown)
 
   # --------------------------------------------------------
-  @glfw_mod_shift     0x001
-  @glfw_mod_ctrl      0x002
-  @glfw_mod_alt       0x004
-  @glfw_mod_super     0x008
+  @glfw_mod_shift 0x001
+  @glfw_mod_ctrl 0x002
+  @glfw_mod_alt 0x004
+  @glfw_mod_super 0x008
   @glfw_mod_caps_lock 0x010
-  @glfw_mod_num_lock  0x020
+  @glfw_mod_num_lock 0x020
   defp prep_mods(mods) do
     []
-    |> add_if_masked( mods, @glfw_mod_shift, :shift )
-    |> add_if_masked( mods, @glfw_mod_ctrl, :ctrl )
-    |> add_if_masked( mods, @glfw_mod_alt, :alt )
-    |> add_if_masked( mods, @glfw_mod_super, :meta )
-    |> add_if_masked( mods, @glfw_mod_caps_lock, :caps_lock )
-    |> add_if_masked( mods, @glfw_mod_num_lock, :num_lock )
+    |> add_if_masked(mods, @glfw_mod_shift, :shift)
+    |> add_if_masked(mods, @glfw_mod_ctrl, :ctrl)
+    |> add_if_masked(mods, @glfw_mod_alt, :alt)
+    |> add_if_masked(mods, @glfw_mod_super, :meta)
+    |> add_if_masked(mods, @glfw_mod_caps_lock, :caps_lock)
+    |> add_if_masked(mods, @glfw_mod_num_lock, :num_lock)
   end
 
-  defp add_if_masked( list, mods, mask, key ) do
+  defp add_if_masked(list, mods, mask, key) do
     case Bitwise.&&&(mods, mask) do
       0 -> list
       _ -> [key | list]
