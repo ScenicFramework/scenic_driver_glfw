@@ -262,7 +262,7 @@ defmodule Scenic.Driver.Glfw.FromPort do
 
   # --------------------------------------------------------
   @glfw_key_atoms %{
-    32 => :key_backspace,
+    32 => :key_space,
     39 => :key_apostrophe,
     44 => :key_comma,
     45 => :key_minus,
