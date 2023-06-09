@@ -6,6 +6,8 @@ Might work on other systems too, but I've only tested those two...
 
 See main Scenic documentation for the real installation steps
 
+## ⚠ This has been replaced in Scenic 0.11+ by [`scenic_driver_local`](https://github.com/ScenicFramework/scenic_driver_local)! ⚠
+
 ### Installing on MacOS
 
 The easiest way to install on MacOS is to use Homebrew. Just run the following in a terminal:
